@@ -3,7 +3,7 @@ import './App.css'
 const occasions = [
   { id: 1, slug: 'graduation', name_ar: 'توزيعات تخرج', name_en: 'Graduation' },
   { id: 2, slug: 'wedding', name_ar: 'توزيعات خطوبة أو زواج', name_en: 'Wedding' },
-  { id: 3, slug: 'baby', name_ar:'توزيعات بيبي ', name_en: 'Baby' },
+  { id: 3, slug: 'baby', name_ar:'توزيعات بيبي', name_en: 'Baby'},
 ]
 
 function App() {
