@@ -229,7 +229,7 @@ Engineering quality (tests, Docker, CI, documentation) is **added with every pha
 | ~~**Q-1**~~ | ✅ **Resolved:** a piece's type is fixed. Boxes are always gifts (BR-6). |
 | **Q-2** | If an order contains both favors and gifts, does it need a deposit? |
 | **Q-3** | How much is the deposit: a fixed percentage of the total, or an amount the admin sets per order? |
-| **Q-4** | Currency: US dollars only, or Syrian pounds as well? |
+| ~~**Q-4**~~ | ✅ **Resolved:** prices are in US dollars. |
 | **Q-5** | Is there an in-person pickup option, without delivery? |
 | **Q-6** | How does the customer receive her tracking code: on screen after ordering, or does the admin send it via WhatsApp or Instagram? |
 | **Q-7** | For governorate orders, do we need a **"Shipped"** status, and should we store the Al-Qadmous waybill number? |

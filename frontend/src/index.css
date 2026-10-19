@@ -1,0 +1,50 @@
+/* Deniz brand colors, taken from the logo */
+:root {
+  --color-cream: #f7f2ec;
+  --color-cream-dark: #efe4d8;
+  --color-blush: #fde4ea;
+  --color-pink: #fda3b8;
+  --color-pink-dark: #e8708f;
+  --color-rose: #c94f6d;
+  --color-red: #e5484d;
+  --color-brown: #7a4a17;
+  --color-brown-light: #a8743e;
+  --color-text: #4a3b3f;
+  --color-text-muted: #8a7a7e;
+  --color-white: #ffffff;
+
+  --font-body: 'Tajawal', system-ui, sans-serif;
+  --font-heading: 'El Messiri', 'Tajawal', serif;
+  --font-brand: 'Pacifico', cursive;
+  --font-script: 'Great Vibes', cursive;
+
+  --radius: 24px;
+  --shadow: 0 10px 30px rgba(201, 79, 109, 0.14);
+  --shadow-strong: 0 18px 40px rgba(201, 79, 109, 0.22);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-cream);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  line-height: 1.7;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
