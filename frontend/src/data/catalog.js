@@ -37,7 +37,7 @@ export const products = [
   { id: 12, kind: 'gift', occasion: null, name_ar: 'بوكس ورد اسطواني حجم وسط', price: null, images: [img('gifts-11'), img('gifts-01'), img('gifts-13')] },
   { id: 13, kind: 'gift', occasion: null, name_ar: 'بوكس قلب حجم وسط', price: null, images: [img('gifts-04'), img('gifts-03'), img('gifts-07')] },
   { id: 14, kind: 'gift', occasion: null, name_ar: 'بوكس قلب حجم كبير', price: null, images: [img('gifts-08'), img('gifts-09'), img('gifts-10')] },
-  { id: 15, kind: 'gift', occasion: null, name_ar: 'بوكس دائري حجم كبير', price: null, images: [img('gifts-05'), img('gifts-15'), img('gifts-02')] },
+  { id: 15, kind: 'gift', occasion: null, name_ar: 'بوكس دائري حجم كبير', price: null, images: [img('gifts-15'), img('gifts-05'), img('gifts-02')] },
   { id: 17, kind: 'gift', occasion: null, name_ar: 'بوكس ورد اسطواني حجم كبير', price: null, images: [img('gifts-12'), img('gifts-14')] },
   { id: 18, kind: 'gift', occasion: null, name_ar: 'بوكيه شمعة الديزي', price: null, images: [img('gifts-06')] },
 ]
