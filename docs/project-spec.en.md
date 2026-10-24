@@ -98,7 +98,8 @@ The business currently runs entirely through Instagram, which causes the followi
   - **Delivery within Damascus:** the customer picks her area, and the delivery fee is added to the total automatically.
   - **Shipping to other governorates via Al-Qadmous:** the customer is told that the shipping fee is paid to the company on pickup, and that the full amount must be transferred before shipping.
 - **FR-09** Spam protection on the form.
-- **FR-10** After submission, the order appears in the dashboard with status **"New"**.
+- **FR-10** After submission, the order appears in the dashboard with status **"Pending review"**. It is only a **request** and is not confirmed until the admin approves it (BR-10).
+- **FR-10a** The form does not allow an event date earlier than the minimum lead time of the requested pieces (BR-9).
 
 **Order Tracking**
 - **FR-11** Every order has a private, hard-to-guess code or link.
@@ -112,7 +113,11 @@ The business currently runs entirely through Instagram, which causes the followi
 
 **Order Management**
 - **FR-15** Show all order details: customer, occasion, date, pieces, colors, text, reference image, and prices.
-- **FR-16** Order lifecycle: New → Confirmed → In Progress → Ready → Delivered.
+- **FR-16** Order lifecycle: Pending review → Approved → Awaiting deposit (favors) → Confirmed → In progress → Ready → Delivered. Also: **Changes proposed**, **Rejected**, and **Cancelled**.
+- **FR-16a** Order review: the admin can **approve**, **reject with a reason**, or **propose changes** (a different date or a smaller quantity).
+- **FR-16b** When changes are proposed, the customer sees them on the tracking page and can accept or decline.
+- **FR-16c** While reviewing, the system shows next to the order: days left until the event, other orders due the same week, and the total pieces due that week, with a warning when time is tight or the week is full.
+- **FR-16d** For each decision (approve, reject, propose changes), the system prepares a **ready-to-copy message** for the admin to send via Instagram or WhatsApp. The tracking page status updates as well.
 - **FR-17** Show a warning when changing status if a required payment has not been recorded (BR-7).
 
 **Payments**
@@ -167,6 +172,8 @@ The business currently runs entirely through Instagram, which causes the followi
 | **BR-6** | **Deposit by order type:** **event favor** orders are only confirmed after a deposit is paid by transfer. **Gift** orders (e.g. a candle flower box or a single candle) need no deposit. A piece's type (favor or gift) is **fixed** in the catalog. |
 | **BR-7** | **Payment rules are soft:** if a required deposit or transfer has not been recorded, the system only shows a **warning** when the status changes, and the admin decides. The system **never blocks**. |
 | **BR-8** | **The assistant** cannot see any cost, profit, or report data. |
+| **BR-9** | **Minimum lead time:** favors at least **14 days** before the event. Gifts **3 to 7 days** depending on size; the lead time is set per piece or size. |
+| **BR-10** | **Online orders are requests:** an order is not confirmed, and no deposit is requested, until the admin reviews and approves it. |
 
 ---
 
@@ -236,3 +243,4 @@ Engineering quality (tests, Docker, CI, documentation) is **added with every pha
 | **Q-8** | The list of Damascus delivery areas and the fee for each. |
 | ~~**Q-9**~~ | ✅ **Resolved:** gifts are shown all together, with no occasion filter. |
 | ~~**Q-10**~~ | ✅ **Resolved:** each custom-shaped candle the admin has made is added to the catalog as its own piece, with photos and a fixed price. |
+| ~~**Q-11**~~ | ✅ **Resolved:** there is no fixed weekly limit. The system shows the weekly load for information only; the admin decides. |
