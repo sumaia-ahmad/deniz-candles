@@ -16,17 +16,13 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        from .seed import seed_command
 
-        app.cli.add_command(seed_command)
+    from .seed import seed_command
 
+    app.cli.add_command(seed_command)
 
-    @app.get("/api/occasions")
-    def list_occasions():
-        return [
-            {"id": 1, "slug": "graduation", "name_ar": "توزيعات تخرج"},
-            {"id": 2, "slug": "engagement", "name_ar": "توزيعات خطوبة أو زواج"},
-            {"id": 3, "slug": "baby", "name_ar": "توزيعات بيبي"},
-        ]
+    from .catalog import bp as catalog_bp
+
+    app.register_blueprint(catalog_bp)
 
     return app
