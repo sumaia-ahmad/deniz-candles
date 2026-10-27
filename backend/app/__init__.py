@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 from dotenv import load_dotenv
 from flask import Flask
@@ -14,6 +15,8 @@ def create_app(test_config=None):
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///deniz.db")
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    # "Remember me" keeps the dashboard signed in for 30 days.
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
     if test_config:
         app.config.update(test_config)
     app.json.ensure_ascii = False

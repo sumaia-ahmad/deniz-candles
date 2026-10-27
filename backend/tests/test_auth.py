@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+
 from .conftest import login
 
 
@@ -27,3 +30,18 @@ def test_password_is_not_stored_in_plain_text(app):
     with app.app_context():
         user = db.session.scalar(db.select(User).where(User.username == "deniz"))
         assert "password123" not in user.password_hash
+
+
+def test_remember_me_keeps_the_session_for_30_days(client):
+    response = client.post(
+        "/api/auth/login", json={"username": "deniz", "password": "password123", "remember": True}
+    )
+    cookie = response.headers["Set-Cookie"]
+    expires = parsedate_to_datetime(cookie.split("Expires=")[1].split(";")[0])
+    days_left = (expires - datetime.now(timezone.utc)).days
+    assert 29 <= days_left <= 30
+
+
+def test_without_remember_me_the_session_ends_with_the_browser(client):
+    cookie = login(client).headers["Set-Cookie"]
+    assert "Expires=" not in cookie

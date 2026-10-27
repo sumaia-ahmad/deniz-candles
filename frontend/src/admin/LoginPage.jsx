@@ -5,6 +5,7 @@ import { adminApi } from './adminApi'
 function LoginPage({ onLogin }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [remember, setRemember] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -13,7 +14,7 @@ function LoginPage({ onLogin }) {
     setSubmitting(true)
     setError('')
     try {
-      onLogin(await adminApi.login(username, password))
+      onLogin(await adminApi.login(username, password, remember))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -40,6 +41,11 @@ function LoginPage({ onLogin }) {
             autoComplete="current-password"
             required
           />
+        </label>
+
+        <label className="switch">
+          <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
+          <span>تذكّريني لمدة 30 يوم (على جهازك بس)</span>
         </label>
 
         {error && <p className="form-error">{error}</p>}

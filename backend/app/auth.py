@@ -58,6 +58,8 @@ def login():
 
     session.clear()
     session["user_id"] = user.id
+    # Without "remember me" the cookie ends when the browser closes.
+    session.permanent = bool(data.get("remember"))
     return user_to_dict(user)
 
 

@@ -19,7 +19,8 @@ async function request(path, { method = 'GET', body } = {}) {
 
 export const adminApi = {
   me: () => request('/api/auth/me'),
-  login: (username, password) => request('/api/auth/login', { method: 'POST', body: { username, password } }),
+  login: (username, password, remember) =>
+    request('/api/auth/login', { method: 'POST', body: { username, password, remember } }),
   logout: () => request('/api/auth/logout', { method: 'POST' }),
 
   products: () => request('/api/admin/products'),
