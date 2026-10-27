@@ -1,7 +1,7 @@
 from flask import Blueprint, abort, request, url_for
 
 from .extensions import db
-from .models import Occasion, Product
+from .models import DeliveryZone, Occasion, Product
 
 bp = Blueprint("catalog", __name__, url_prefix="/api")
 
@@ -18,6 +18,7 @@ def product_to_dict(product):
                 "id": size.id,
                 "name_ar": size.name_ar,
                 "price": str(size.price) if size.price is not None else None,
+                "min_lead_days": size.min_lead_days,
             }
             for size in product.sizes
         ],
@@ -58,3 +59,11 @@ def get_product(product_id):
     if product is None or not product.is_visible:
         abort(404)
     return product_to_dict(product)
+
+
+@bp.get("/delivery-zones")
+def list_delivery_zones():
+    zones = db.session.scalars(
+        db.select(DeliveryZone).where(DeliveryZone.is_active.is_(True)).order_by(DeliveryZone.name_ar)
+    )
+    return [{"id": z.id, "name_ar": z.name_ar, "fee": str(z.fee)} for z in zones]

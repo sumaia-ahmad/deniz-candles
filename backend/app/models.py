@@ -1,3 +1,5 @@
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from .extensions import db
 
 
@@ -39,6 +41,8 @@ class ProductSize(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
     name_ar = db.Column(db.String(50), nullable=False, default="قياسي")
     price = db.Column(db.Numeric(10, 2), nullable=True)
+    # Minimum days between ordering and the event (BR-9).
+    min_lead_days = db.Column(db.Integer, nullable=False, default=14)
 
     product = db.relationship("Product", back_populates="sizes")
 
@@ -52,3 +56,29 @@ class ProductImage(db.Model):
     sort_order = db.Column(db.Integer, nullable=False, default=0)
 
     product = db.relationship("Product", back_populates="images")
+
+
+class DeliveryZone(db.Model):
+    __tablename__ = "delivery_zones"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name_ar = db.Column(db.String(100), unique=True, nullable=False)
+    fee = db.Column(db.Numeric(10, 2), nullable=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+
+
+class User(db.Model):
+    __tablename__ = "users"
+
+    ROLES = ("admin", "assistant")
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default="assistant")
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)

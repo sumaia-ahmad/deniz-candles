@@ -33,9 +33,12 @@ PRODUCTS = [
 
 @click.command("seed")
 def seed_command():
-    """Reset the database and fill it with the Deniz catalog."""
-    db.drop_all()
-    db.create_all()
+    """Reset the catalog (occasions, products, sizes, images) to the starting data.
+
+    Accounts and delivery zones are left untouched.
+    """
+    for model in (ProductImage, ProductSize, Product, Occasion):
+        db.session.execute(db.delete(model))
 
     occasions = {}
     for data in OCCASIONS:
@@ -49,7 +52,8 @@ def seed_command():
             occasion=occasions.get(occasion_slug),
             name_ar=name_ar,
         )
-        product.sizes.append(ProductSize(name_ar="قياسي", price=None))
+        lead_days = 14 if kind == "favor" else 3  # BR-9 starting values
+        product.sizes.append(ProductSize(name_ar="قياسي", price=None, min_lead_days=lead_days))
         for order, name in enumerate(image_names):
             product.images.append(ProductImage(filename=f"{name}.jpg", sort_order=order))
         db.session.add(product)

@@ -16,3 +16,6 @@ backend/instance/
 
 # Editor settings
 .vscode/
+
+# Test cache
+.pytest_cache/

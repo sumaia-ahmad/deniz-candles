@@ -1,0 +1,392 @@
+/* Dashboard styles. Brand colors and fonts come from index.css. */
+
+.admin {
+  min-height: 100vh;
+  background: var(--color-cream);
+}
+
+.admin-status {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 48px 20px;
+}
+
+/* ---------- Header ---------- */
+.admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 28px;
+  padding: 10px 24px;
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-cream-dark);
+}
+
+.admin-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-header__brand img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.admin-header__brand span {
+  font-family: var(--font-brand);
+  color: var(--color-pink-dark);
+  font-size: 1.3rem;
+}
+
+.admin-header__brand small {
+  color: var(--color-text-muted);
+  border-inline-start: 1px solid var(--color-cream-dark);
+  padding-inline-start: 8px;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+
+.admin-nav a {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.admin-nav a.active {
+  background: var(--color-blush);
+  color: var(--color-rose);
+}
+
+.admin-header__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.admin-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+
+/* ---------- Page head ---------- */
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.page-head h1 {
+  font-family: var(--font-heading);
+  color: var(--color-brown);
+  margin: 0;
+}
+
+.page-head__hint {
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+  max-width: 640px;
+}
+
+.page-head__hint strong {
+  color: var(--color-rose);
+}
+
+.kind-group h2 {
+  font-family: var(--font-heading);
+  color: var(--color-brown);
+  font-size: 1.3rem;
+  margin: 28px 0 12px;
+}
+
+/* ---------- Cards ---------- */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.admin-card {
+  background: var(--color-white);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 4px 16px rgba(201, 79, 109, 0.08);
+}
+
+.admin-card--hidden {
+  opacity: 0.65;
+}
+
+.admin-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-card__image {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex: none;
+}
+
+.admin-card__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-card__title h3 {
+  font-size: 1.05rem;
+  margin: 0;
+  color: var(--color-brown);
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.8rem;
+  background: var(--color-cream-dark);
+  color: var(--color-text);
+  padding: 1px 10px;
+  border-radius: 999px;
+}
+
+/* ---------- Tables ---------- */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  text-align: start;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  padding: 0 6px 6px;
+}
+
+.admin-table td {
+  padding: 4px 6px;
+  border-top: 1px solid var(--color-cream);
+  vertical-align: middle;
+}
+
+.row-muted td {
+  opacity: 0.6;
+}
+
+.row-actions {
+  white-space: nowrap;
+}
+
+.saved {
+  color: #3a9a5b;
+  font-weight: 700;
+  margin-inline: 4px;
+}
+
+/* ---------- Inputs ---------- */
+.admin input:not([type='checkbox']),
+.login input {
+  font: inherit;
+  width: 100%;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1.5px solid var(--color-cream-dark);
+  border-radius: 10px;
+  background: var(--color-white);
+  color: var(--color-text);
+}
+
+.admin input:focus,
+.login input:focus {
+  outline: none;
+  border-color: var(--color-pink);
+}
+
+.input-short {
+  max-width: 80px;
+}
+
+.money-input {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.money-input span {
+  color: var(--color-text-muted);
+}
+
+.money-input input {
+  min-width: 90px;
+}
+
+.search {
+  max-width: 260px;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.switch input {
+  accent-color: var(--color-pink-dark);
+  width: 18px;
+  height: 18px;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.inline-form > input {
+  flex: 1 1 160px;
+}
+
+.inline-form .money-input {
+  flex: 0 1 140px;
+}
+
+.inline-form--card {
+  background: var(--color-white);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+/* ---------- Buttons ---------- */
+.btn-small {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-cream-dark);
+  background: var(--color-white);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.btn-small:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn-small--primary {
+  background: var(--color-pink-dark);
+  border-color: var(--color-pink-dark);
+  color: var(--color-white);
+}
+
+.btn-small--danger {
+  color: var(--color-red);
+  border-color: transparent;
+  background: transparent;
+}
+
+.admin-link {
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-pink-dark);
+  background: none;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.form-error {
+  color: var(--color-red);
+  background: #fdecec;
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin: 0 0 12px;
+}
+
+/* ---------- Login ---------- */
+.login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 20% 20%, var(--color-blush) 0, transparent 50%),
+    var(--color-cream);
+}
+
+.login__box {
+  width: min(380px, 100%);
+  background: var(--color-white);
+  border-radius: 24px;
+  padding: 32px 28px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login__logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+.login__title {
+  font-family: var(--font-heading);
+  color: var(--color-brown);
+  text-align: center;
+  margin: 0 0 6px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.login .btn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-header {
+    padding: 10px 14px;
+  }
+}
