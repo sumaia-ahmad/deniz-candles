@@ -22,7 +22,7 @@ def product_to_dict(product):
             for size in product.sizes
         ],
         "images": [
-            url_for("static", filename=f"products/{image.filename}", _external=True)
+            url_for("static", filename=f"products/{image.filename}")
             for image in product.images
         ],
     }

@@ -50,7 +50,7 @@ function ProductModal({ product, onClose }) {
 
         <div className="modal__info">
           <h3 className="modal__title">{product.name_ar}</h3>
-          <p className="modal__price">{product.price ? `$${product.price}` : 'السعر قريباً'}</p>
+          <p className="modal__price">{product.sizes[0]?.price ? `$${product.sizes[0].price}` : 'السعر قريباً'}</p>
           <a href={instagramUrl} target="_blank" rel="noreferrer" className="btn btn--primary">
             اطلبي عبر إنستغرام
           </a>

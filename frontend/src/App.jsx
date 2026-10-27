@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import logo from './assets/logo.png'
-import heroMainImg from './assets/products/gifts-11.jpg'
+import heroMainImg from './assets/hero.jpg'
 import ProductCard from './components/ProductCard'
 import ProductModal from './components/ProductModal'
-import { occasions, products, instagramUrl } from './data/catalog'
+import { fetchCatalog } from './api'
+import { instagramUrl } from './data/catalog'
 
 const features = [
   { id: 1, icon: '🕯️', title: 'مصنوعة بحب' },
@@ -12,12 +13,26 @@ const features = [
   { id: 3, icon: '🎀', title: 'تصميم حسب طلبك' },
 ]
 
-const favors = products.filter(product => product.kind === 'favor')
-const gifts = products.filter(product => product.kind === 'gift')
-
 function App() {
+  const [occasions, setOccasions] = useState([])
+  const [products, setProducts] = useState([])
+  const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [selectedOccasion, setSelectedOccasion] = useState('all')
   const [openProduct, setOpenProduct] = useState(null)
+
+  // Load the catalog from the server once, when the page opens.
+  useEffect(() => {
+    fetchCatalog()
+      .then(data => {
+        setOccasions(data.occasions)
+        setProducts(data.products)
+        setStatus('ready')
+      })
+      .catch(() => setStatus('error'))
+  }, [])
+
+  const favors = products.filter(product => product.kind === 'favor')
+  const gifts = products.filter(product => product.kind === 'gift')
 
   const visibleFavors =
     selectedOccasion === 'all'
@@ -108,6 +123,11 @@ function App() {
               </button>
             ))}
           </div>
+
+          {status === 'loading' && <p className="status">عم نحمّل القطع...</p>}
+          {status === 'error' && (
+            <p className="status">صار في مشكلة بتحميل القطع، جربي بعد شوي 🙏</p>
+          )}
 
           <ul className="products">
             {visibleFavors.map(product => (

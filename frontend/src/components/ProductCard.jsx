@@ -9,7 +9,7 @@ function ProductCard({ product, onOpen }) {
           )}
         </div>
         <h3 className="card__title">{product.name_ar}</h3>
-        <p className="card__price">{product.price ? `$${product.price}` : 'السعر قريباً'}</p>
+        <p className="card__price">{product.sizes[0]?.price ? `$${product.sizes[0].price}` : 'السعر قريباً'}</p>
       </button>
     </li>
   )
