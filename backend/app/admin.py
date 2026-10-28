@@ -22,9 +22,9 @@ def handle_validation_error(error):
 def clean_name(value, label):
     name = (value or "").strip() if isinstance(value, str) else ""
     if not name:
-        raise ValidationError(f"{label} مطلوب")
+        raise ValidationError(f"{label} is required.")
     if len(name) > 100:
-        raise ValidationError(f"{label} طويل كتير")
+        raise ValidationError(f"{label} is too long.")
     return name
 
 
@@ -32,13 +32,13 @@ def clean_money(value, label, allow_empty):
     if value in (None, ""):
         if allow_empty:
             return None
-        raise ValidationError(f"{label} مطلوب")
+        raise ValidationError(f"{label} is required.")
     try:
         amount = Decimal(str(value))
     except InvalidOperation:
-        raise ValidationError(f"{label} لازم يكون رقم") from None
+        raise ValidationError(f"{label} must be a number.") from None
     if amount < 0 or amount.as_tuple().exponent < -2:
-        raise ValidationError(f"{label} لازم يكون رقم موجب، وبرقمين بعد الفاصلة كحد أقصى")
+        raise ValidationError(f"{label} must be a positive number with at most 2 decimal places.")
     return amount
 
 
@@ -46,9 +46,9 @@ def clean_days(value):
     try:
         days = int(value)
     except (TypeError, ValueError):
-        raise ValidationError("مدة التحضير لازم تكون عدد أيام") from None
+        raise ValidationError("Min. days must be a whole number.") from None
     if not 0 <= days <= 365:
-        raise ValidationError("مدة التحضير لازم تكون بين 0 و 365 يوم")
+        raise ValidationError("Min. days must be between 0 and 365.")
     return days
 
 
@@ -75,7 +75,7 @@ def update_product(product_id):
     product = get_or_404(Product, product_id)
     data = request.get_json(silent=True) or {}
     if "name_ar" in data:
-        product.name_ar = clean_name(data["name_ar"], "اسم القطعة")
+        product.name_ar = clean_name(data["name_ar"], "Product name")
     if "is_visible" in data:
         product.is_visible = bool(data["is_visible"])
     db.session.commit()
@@ -97,8 +97,8 @@ def add_size(product_id):
     product = get_or_404(Product, product_id)
     data = request.get_json(silent=True) or {}
     size = ProductSize(
-        name_ar=clean_name(data.get("name_ar"), "اسم الحجم"),
-        price=clean_money(data.get("price"), "السعر", allow_empty=True),
+        name_ar=clean_name(data.get("name_ar"), "Size name"),
+        price=clean_money(data.get("price"), "Price", allow_empty=True),
         min_lead_days=clean_days(data.get("min_lead_days", 14 if product.kind == "favor" else 3)),
     )
     product.sizes.append(size)
@@ -112,9 +112,9 @@ def update_size(size_id):
     size = get_or_404(ProductSize, size_id)
     data = request.get_json(silent=True) or {}
     if "name_ar" in data:
-        size.name_ar = clean_name(data["name_ar"], "اسم الحجم")
+        size.name_ar = clean_name(data["name_ar"], "Size name")
     if "price" in data:
-        size.price = clean_money(data["price"], "السعر", allow_empty=True)
+        size.price = clean_money(data["price"], "Price", allow_empty=True)
     if "min_lead_days" in data:
         size.min_lead_days = clean_days(data["min_lead_days"])
     db.session.commit()
@@ -126,7 +126,7 @@ def update_size(size_id):
 def delete_size(size_id):
     size = get_or_404(ProductSize, size_id)
     if len(size.product.sizes) == 1:
-        raise ValidationError("كل قطعة لازم يكون إلها حجم واحد على الأقل")
+        raise ValidationError("Every product needs at least one size.")
     db.session.delete(size)
     db.session.commit()
     return "", 204
@@ -142,7 +142,7 @@ def zone_to_dict(zone):
 def ensure_unique_zone_name(name, current_id=None):
     existing = db.session.scalar(db.select(DeliveryZone).where(DeliveryZone.name_ar == name))
     if existing is not None and existing.id != current_id:
-        raise ValidationError("في منطقة بنفس الاسم")
+        raise ValidationError("A zone with this name already exists.")
 
 
 @bp.get("/delivery-zones")
@@ -156,11 +156,11 @@ def list_zones():
 @admin_required
 def create_zone():
     data = request.get_json(silent=True) or {}
-    name = clean_name(data.get("name_ar"), "اسم المنطقة")
+    name = clean_name(data.get("name_ar"), "Zone name")
     ensure_unique_zone_name(name)
     zone = DeliveryZone(
         name_ar=name,
-        fee=clean_money(data.get("fee"), "أجرة التوصيل", allow_empty=False),
+        fee=clean_money(data.get("fee"), "Delivery fee", allow_empty=False),
         is_active=bool(data.get("is_active", True)),
     )
     db.session.add(zone)
@@ -174,11 +174,11 @@ def update_zone(zone_id):
     zone = get_or_404(DeliveryZone, zone_id)
     data = request.get_json(silent=True) or {}
     if "name_ar" in data:
-        name = clean_name(data["name_ar"], "اسم المنطقة")
+        name = clean_name(data["name_ar"], "Zone name")
         ensure_unique_zone_name(name, current_id=zone.id)
         zone.name_ar = name
     if "fee" in data:
-        zone.fee = clean_money(data["fee"], "أجرة التوصيل", allow_empty=False)
+        zone.fee = clean_money(data["fee"], "Delivery fee", allow_empty=False)
     if "is_active" in data:
         zone.is_active = bool(data["is_active"])
     db.session.commit()

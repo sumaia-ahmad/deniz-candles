@@ -178,6 +178,7 @@
 
 .admin-table th {
   text-align: start;
+  white-space: nowrap;
   font-size: 0.85rem;
   color: var(--color-text-muted);
   font-weight: 500;
@@ -185,7 +186,7 @@
 }
 
 .admin-table td {
-  padding: 4px 6px;
+  padding: 4px;
   border-top: 1px solid var(--color-cream);
   vertical-align: middle;
 }
@@ -223,10 +224,6 @@
   border-color: var(--color-pink);
 }
 
-.input-short {
-  max-width: 80px;
-}
-
 .money-input {
   display: flex;
   align-items: center;
@@ -237,8 +234,16 @@
   color: var(--color-text-muted);
 }
 
-.money-input input {
-  min-width: 90px;
+.admin .money-input input {
+  min-width: 84px;
+}
+
+.admin-table td:first-child input {
+  min-width: 84px;
+}
+
+.admin input.input-short {
+  width: 64px;
 }
 
 .search {

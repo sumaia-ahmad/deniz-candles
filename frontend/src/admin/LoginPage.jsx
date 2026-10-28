@@ -23,17 +23,17 @@ function LoginPage({ onLogin }) {
   }
 
   return (
-    <div className="login">
+    <div className="login" dir="ltr" lang="en">
       <form className="login__box" onSubmit={handleSubmit}>
         <img src={logo} alt="Deniz Studio" className="login__logo" />
-        <h1 className="login__title">لوحة التحكم</h1>
+        <h1 className="login__title">Dashboard</h1>
 
         <label className="field">
-          <span>اسم المستخدم</span>
+          <span>Username</span>
           <input value={username} onChange={e => setUsername(e.target.value)} autoComplete="username" required />
         </label>
         <label className="field">
-          <span>كلمة السر</span>
+          <span>Password</span>
           <input
             type="password"
             value={password}
@@ -45,13 +45,13 @@ function LoginPage({ onLogin }) {
 
         <label className="switch">
           <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
-          <span>حفظ تسجيل الدخول لمدة 30 يوماً</span>
+          <span>Keep me signed in for 30 days</span>
         </label>
 
         {error && <p className="form-error">{error}</p>}
 
         <button type="submit" className="btn btn--primary" disabled={submitting}>
-          {submitting ? 'لحظة...' : 'دخول'}
+          {submitting ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
     </div>

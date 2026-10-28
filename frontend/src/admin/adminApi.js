@@ -10,7 +10,7 @@ async function request(path, { method = 'GET', body } = {}) {
 
   const data = await response.json().catch(() => null)
   if (!response.ok) {
-    const error = new Error(data?.error || 'صار في مشكلة، جربي مرة تانية')
+    const error = new Error(data?.error || 'Something went wrong. Please try again.')
     error.status = response.status
     throw error
   }

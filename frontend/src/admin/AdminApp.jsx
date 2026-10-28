@@ -22,27 +22,27 @@ function AdminApp() {
     setUser(null)
   }
 
-  if (user === undefined) return <p className="admin-status">عم نتحقق من الدخول...</p>
+  if (user === undefined) return <p className="admin-status" dir="ltr">Checking your session...</p>
   if (user === null) return <LoginPage onLogin={setUser} />
 
   const isAdmin = user.role === 'admin'
 
   return (
-    <div className="admin">
+    <div className="admin" dir="ltr" lang="en">
       <header className="admin-header">
         <div className="admin-header__brand">
           <img src={logo} alt="" />
           <span>Deniz Studio</span>
-          <small>لوحة التحكم</small>
+          <small>Dashboard</small>
         </div>
         <nav className="admin-nav">
-          {isAdmin && <NavLink to="/admin/products">القطع والأسعار</NavLink>}
-          {isAdmin && <NavLink to="/admin/zones">مناطق التوصيل</NavLink>}
+          {isAdmin && <NavLink to="/admin/products">Products & Prices</NavLink>}
+          {isAdmin && <NavLink to="/admin/zones">Delivery Zones</NavLink>}
         </nav>
         <div className="admin-header__user">
           <span>{user.username}</span>
           <button type="button" className="admin-link" onClick={handleLogout}>
-            تسجيل خروج
+            Log out
           </button>
         </div>
       </header>
@@ -56,7 +56,7 @@ function AdminApp() {
             <Route path="*" element={<Navigate to="products" replace />} />
           </Routes>
         ) : (
-          <p className="admin-status">أهلين {user.username} 👋 صفحة الطلبات رح تكون هون قريباً.</p>
+          <p className="admin-status">Hi {user.username} 👋 The orders page is coming soon.</p>
         )}
       </main>
     </div>

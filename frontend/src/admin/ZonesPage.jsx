@@ -21,7 +21,7 @@ function ZoneRow({ zone, onSaved, onDeleted, onError }) {
   }
 
   async function remove() {
-    if (!window.confirm(`أكيد بدك تحذفي منطقة "${zone.name_ar}"؟`)) return
+    if (!window.confirm(`Delete the zone "${zone.name_ar}"?`)) return
     try {
       await adminApi.deleteZone(zone.id)
       onDeleted(zone.id)
@@ -33,7 +33,7 @@ function ZoneRow({ zone, onSaved, onDeleted, onError }) {
   return (
     <tr className={zone.is_active ? '' : 'row-muted'}>
       <td>
-        <input value={draft.name_ar} onChange={e => setDraft({ ...draft, name_ar: e.target.value })} aria-label="اسم المنطقة" />
+        <input value={draft.name_ar} onChange={e => setDraft({ ...draft, name_ar: e.target.value })} aria-label="Zone name" dir="auto" />
       </td>
       <td>
         <div className="money-input">
@@ -44,14 +44,14 @@ function ZoneRow({ zone, onSaved, onDeleted, onError }) {
             step="0.01"
             value={draft.fee}
             onChange={e => setDraft({ ...draft, fee: e.target.value })}
-            aria-label="أجرة التوصيل"
+            aria-label="Delivery fee"
           />
         </div>
       </td>
       <td>
         <label className="switch">
           <input type="checkbox" checked={zone.is_active} onChange={() => save({ is_active: !zone.is_active })} />
-          <span>{zone.is_active ? 'متاحة' : 'موقوفة'}</span>
+          <span>{zone.is_active ? 'Active' : 'Paused'}</span>
         </label>
       </td>
       <td className="row-actions">
@@ -61,10 +61,10 @@ function ZoneRow({ zone, onSaved, onDeleted, onError }) {
           onClick={() => save(draft)}
           disabled={!changed || saving}
         >
-          {saving ? '...' : 'حفظ'}
+          {saving ? '...' : 'Save'}
         </button>
         <button type="button" className="btn-small btn-small--danger" onClick={remove}>
-          حذف
+          Delete
         </button>
       </td>
     </tr>
@@ -100,16 +100,16 @@ function ZonesPage({ onSessionEnded }) {
     }
   }
 
-  if (zones === null) return <p className="admin-status">{error || 'عم نحمّل المناطق...'}</p>
+  if (zones === null) return <p className="admin-status">{error || 'Loading zones...'}</p>
 
   return (
     <section>
       <div className="page-head">
         <div>
-          <h1>مناطق التوصيل</h1>
+          <h1>Delivery Zones</h1>
           <p className="page-head__hint">
-            مناطق دمشق وأجرة التوصيل لكل وحدة. الأجرة بتنضاف لمجموع الطلب تلقائياً.
-            الشحن للمحافظات عن طريق القدموس ما بينحط هون.
+            Damascus areas and their delivery fee. The fee is added to the order total automatically. Shipping to
+            other governorates (Al-Qadmous) is not listed here.
           </p>
         </div>
       </div>
@@ -118,7 +118,7 @@ function ZonesPage({ onSessionEnded }) {
         <input
           value={newZone.name_ar}
           onChange={e => setNewZone({ ...newZone, name_ar: e.target.value })}
-          placeholder="اسم المنطقة (مثلاً: المزة)"
+          placeholder="Zone name (e.g. المزة)" dir="auto"
           required
         />
         <div className="money-input">
@@ -129,32 +129,32 @@ function ZonesPage({ onSessionEnded }) {
             step="0.01"
             value={newZone.fee}
             onChange={e => setNewZone({ ...newZone, fee: e.target.value })}
-            placeholder="الأجرة"
+            placeholder="Fee"
             required
           />
         </div>
-        <button type="submit" className="btn-small btn-small--primary">+ إضافة منطقة</button>
+        <button type="submit" className="btn-small btn-small--primary">+ Add zone</button>
       </form>
 
       {error && (
         <p className="form-error" role="alert">
           {error}{' '}
           <button type="button" className="admin-link" onClick={() => setError('')}>
-            إخفاء
+            Dismiss
           </button>
         </p>
       )}
 
       {zones.length === 0 ? (
-        <p className="admin-status">لسا ما في مناطق. ضيفي أول منطقة من فوق 👆</p>
+        <p className="admin-status">No zones yet. Add your first one above 👆</p>
       ) : (
         <div className="admin-card table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>المنطقة</th>
-                <th>أجرة التوصيل</th>
-                <th>الحالة</th>
+                <th>Zone</th>
+                <th>Delivery fee</th>
+                <th>Status</th>
                 <th></th>
               </tr>
             </thead>

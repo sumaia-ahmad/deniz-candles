@@ -26,7 +26,7 @@ def login_required(view):
     def wrapped(*args, **kwargs):
         user = current_user()
         if user is None:
-            return jsonify(error="يجب تسجيل الدخول"), 401
+            return jsonify(error="Please sign in."), 401
         g.user = user
         return view(*args, **kwargs)
 
@@ -40,7 +40,7 @@ def admin_required(view):
     @login_required
     def wrapped(*args, **kwargs):
         if g.user.role != "admin":
-            return jsonify(error="هذه الصفحة للمديرة فقط"), 403
+            return jsonify(error="Only the admin can access this page."), 403
         return view(*args, **kwargs)
 
     return wrapped
@@ -54,7 +54,7 @@ def login():
 
     user = db.session.scalar(db.select(User).where(User.username == username))
     if user is None or not user.check_password(password):
-        return jsonify(error="اسم المستخدم أو كلمة السر غير صحيحة"), 401
+        return jsonify(error="Incorrect username or password."), 401
 
     session.clear()
     session["user_id"] = user.id

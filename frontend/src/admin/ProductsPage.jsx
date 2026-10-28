@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { adminApi } from './adminApi'
 
-const KIND_TITLES = { favor: 'التوزيعات', gift: 'الهدايا' }
+const KIND_TITLES = { favor: 'Favors', gift: 'Gifts' }
 
 function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
   const [draft, setDraft] = useState({
@@ -38,7 +38,7 @@ function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
   }
 
   async function remove() {
-    if (!window.confirm(`أكيد بدك تحذفي حجم "${size.name_ar}"؟`)) return
+    if (!window.confirm(`Delete the size "${size.name_ar}"?`)) return
     try {
       await adminApi.deleteSize(size.id)
       onDeleted(size.id)
@@ -50,7 +50,7 @@ function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
   return (
     <tr>
       <td>
-        <input value={draft.name_ar} onChange={e => update('name_ar', e.target.value)} aria-label="اسم الحجم" />
+        <input value={draft.name_ar} onChange={e => update('name_ar', e.target.value)} aria-label="Size name" dir="auto" />
       </td>
       <td>
         <div className="money-input">
@@ -62,8 +62,8 @@ function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
             inputMode="decimal"
             value={draft.price}
             onChange={e => update('price', e.target.value)}
-            placeholder="بلا سعر"
-            aria-label="السعر"
+            placeholder="Price"
+            aria-label="Price"
           />
         </div>
       </td>
@@ -74,18 +74,18 @@ function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
           max="365"
           value={draft.min_lead_days}
           onChange={e => update('min_lead_days', e.target.value)}
-          aria-label="أقل مدة قبل المناسبة بالأيام"
+          aria-label="Minimum days before the event"
           className="input-short"
         />
       </td>
       <td className="row-actions">
         <button type="button" className="btn-small btn-small--primary" onClick={save} disabled={!changed || saving}>
-          {saving ? '...' : 'حفظ'}
+          {saving ? '...' : 'Save'}
         </button>
         {saved && !changed && <span className="saved">✓</span>}
         {canDelete && (
           <button type="button" className="btn-small btn-small--danger" onClick={remove}>
-            حذف
+            Delete
           </button>
         )}
       </td>
@@ -130,12 +130,12 @@ function ProductCard({ product, onChange, onError }) {
       <div className="admin-card__head">
         {product.images[0] && <img src={product.images[0]} alt="" className="admin-card__image" />}
         <div className="admin-card__title">
-          <h3>{product.name_ar}</h3>
-          {!product.is_visible && <span className="badge">مخفية عن الزبائن</span>}
+          <h3 dir="auto">{product.name_ar}</h3>
+          {!product.is_visible && <span className="badge">Hidden from customers</span>}
         </div>
-        <label className="switch" title="ظاهرة بالموقع">
+        <label className="switch" title="Visible on the website">
           <input type="checkbox" checked={product.is_visible} onChange={toggleVisible} />
-          <span>ظاهرة بالموقع</span>
+          <span>Visible on site</span>
         </label>
       </div>
 
@@ -143,9 +143,9 @@ function ProductCard({ product, onChange, onError }) {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>الحجم</th>
-              <th>السعر</th>
-              <th>أقل مدة (يوم)</th>
+              <th>Size</th>
+              <th>Price</th>
+              <th>Min. days</th>
               <th></th>
             </tr>
           </thead>
@@ -169,7 +169,7 @@ function ProductCard({ product, onChange, onError }) {
           <input
             value={newSize.name_ar}
             onChange={e => setNewSize({ ...newSize, name_ar: e.target.value })}
-            placeholder="اسم الحجم (مثلاً: كبير)"
+            placeholder="Size name (e.g. كبير)" dir="auto"
             required
           />
           <div className="money-input">
@@ -180,15 +180,15 @@ function ProductCard({ product, onChange, onError }) {
               step="0.01"
               value={newSize.price}
               onChange={e => setNewSize({ ...newSize, price: e.target.value })}
-              placeholder="السعر"
+              placeholder="Price"
             />
           </div>
-          <button type="submit" className="btn-small btn-small--primary">إضافة</button>
-          <button type="button" className="btn-small" onClick={() => setAdding(false)}>إلغاء</button>
+          <button type="submit" className="btn-small btn-small--primary">Add</button>
+          <button type="button" className="btn-small" onClick={() => setAdding(false)}>Cancel</button>
         </form>
       ) : (
         <button type="button" className="admin-link" onClick={() => setAdding(true)}>
-          + إضافة حجم
+          + Add size
         </button>
       )}
     </article>
@@ -216,7 +216,7 @@ function ProductsPage({ onSessionEnded }) {
     setProducts(products.map(p => (p.id === updated.id ? updated : p)))
   }
 
-  if (products === null) return <p className="admin-status">{error || 'عم نحمّل القطع...'}</p>
+  if (products === null) return <p className="admin-status">{error || 'Loading products...'}</p>
 
   const visible = products.filter(p => p.name_ar.includes(search.trim()))
   const withoutPrice = products.filter(p => p.sizes.some(s => s.price === null)).length
@@ -225,10 +225,11 @@ function ProductsPage({ onSessionEnded }) {
     <section>
       <div className="page-head">
         <div>
-          <h1>القطع والأسعار</h1>
+          <h1>Products & Prices</h1>
           <p className="page-head__hint">
-            السعر بالدولار لكل حجم. و"أقل مدة" يعني أقل عدد أيام بين الطلب والمناسبة.
-            {withoutPrice > 0 && <strong> في {withoutPrice} قطعة لسا بلا سعر.</strong>}
+            Prices are in US dollars, per size. "Min. days" is the shortest time allowed between the order and
+            the event.
+            {withoutPrice > 0 && <strong> {withoutPrice} products still have no price.</strong>}
           </p>
         </div>
         <input
@@ -236,7 +237,7 @@ function ProductsPage({ onSessionEnded }) {
           type="search"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="ابحثي عن قطعة..."
+          placeholder="Search products..." dir="auto"
         />
       </div>
 
@@ -244,7 +245,7 @@ function ProductsPage({ onSessionEnded }) {
         <p className="form-error" role="alert">
           {error}{' '}
           <button type="button" className="admin-link" onClick={() => setError('')}>
-            إخفاء
+            Dismiss
           </button>
         </p>
       )}
