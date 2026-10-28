@@ -45,7 +45,7 @@ function LoginPage({ onLogin }) {
 
         <label className="switch">
           <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
-          <span>تذكّريني لمدة 30 يوم (على جهازك بس)</span>
+          <span>حفظ تسجيل الدخول لمدة 30 يوماً</span>
         </label>
 
         {error && <p className="form-error">{error}</p>}
