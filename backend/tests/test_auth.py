@@ -45,3 +45,13 @@ def test_remember_me_keeps_the_session_for_30_days(client):
 def test_without_remember_me_the_session_ends_with_the_browser(client):
     cookie = login(client).headers["Set-Cookie"]
     assert "Expires=" not in cookie
+
+
+def test_reset_password_command(app):
+    runner = app.test_cli_runner()
+    result = runner.invoke(args=["reset-password", "deniz"], input="newpassword1\nnewpassword1\n")
+    assert "Password updated" in result.output
+
+    client = app.test_client()
+    assert login(client, password="password123").status_code == 401
+    assert login(client, password="newpassword1").status_code == 200

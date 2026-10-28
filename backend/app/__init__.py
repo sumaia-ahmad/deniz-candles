@@ -30,10 +30,12 @@ def create_app(test_config=None):
         db.create_all()
 
     from .seed import seed_command
-    from .users import create_user_command
+    from .users import create_user_command, list_users_command, reset_password_command
 
     app.cli.add_command(seed_command)
     app.cli.add_command(create_user_command)
+    app.cli.add_command(reset_password_command)
+    app.cli.add_command(list_users_command)
 
     from .admin import bp as admin_bp
     from .auth import bp as auth_bp

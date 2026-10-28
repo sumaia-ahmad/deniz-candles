@@ -23,8 +23,14 @@ with create_app().app_context():
 if [ "$USERS" = "0" ]; then
   echo ""
   echo "👋 First time! Let's create your dashboard account."
-  read -r -p "Choose a username: " NEW_USER
-  (cd backend && source .venv/bin/activate && flask --app app create-user "$NEW_USER")
+  echo "   (The password needs at least 8 characters. It stays invisible while you type.)"
+  until (
+    read -r -p "Choose a username: " NEW_USER
+    cd backend && source .venv/bin/activate && flask --app app create-user "$NEW_USER"
+  ); do
+    echo "❌ The account was not created. Let's try again."
+    echo ""
+  done
   echo ""
 fi
 
