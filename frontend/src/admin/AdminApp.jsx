@@ -6,6 +6,7 @@ import LoginPage from './LoginPage'
 import OrderDetailPage from './OrderDetailPage'
 import OrdersPage from './OrdersPage'
 import ProductsPage from './ProductsPage'
+import SettingsPage from './SettingsPage'
 import ZonesPage from './ZonesPage'
 import './admin.css'
 
@@ -41,6 +42,7 @@ function AdminApp() {
           <NavLink to="/admin/orders">Orders</NavLink>
           {isAdmin && <NavLink to="/admin/products">Products & Prices</NavLink>}
           {isAdmin && <NavLink to="/admin/zones">Delivery Zones</NavLink>}
+          {isAdmin && <NavLink to="/admin/settings">Settings</NavLink>}
         </nav>
         <div className="admin-header__user">
           <span>{user.username}</span>
@@ -57,6 +59,7 @@ function AdminApp() {
           <Route path="orders/:orderId" element={<OrderDetailPage isAdmin={isAdmin} onSessionEnded={handleSessionEnded} />} />
           {isAdmin && <Route path="products" element={<ProductsPage onSessionEnded={handleSessionEnded} />} />}
           {isAdmin && <Route path="zones" element={<ZonesPage onSessionEnded={handleSessionEnded} />} />}
+          {isAdmin && <Route path="settings" element={<SettingsPage onSessionEnded={handleSessionEnded} />} />}
           <Route path="*" element={<Navigate to="orders" replace />} />
         </Routes>
       </main>

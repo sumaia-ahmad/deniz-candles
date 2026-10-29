@@ -384,3 +384,26 @@
     flex-direction: row;
   }
 }
+
+.order-summary strong {
+  text-align: left;
+}
+
+.deposit-line strong {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.deposit-line small {
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.deposit-ok {
+  color: #2f7d47;
+}
+
+.deposit-due {
+  color: var(--color-red);
+}

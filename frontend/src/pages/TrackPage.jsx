@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { fetchOrder, respondToChanges } from '../api'
 import PageHeader from '../components/PageHeader'
+import Price from '../components/Price'
 import { formatDate, formatMoney, STATUS, STEPS } from '../orderStatus'
 import '../order.css'
 
@@ -70,7 +71,11 @@ function OrderView({ order, onChange }) {
         <p className="track-note">طلبك وصلنا، وعم نراجعه. رح نتواصل معك قريباً لنأكده.</p>
       )}
       {order.status === 'awaiting_deposit' && (
-        <p className="track-note">طلبك مقبول 🎉 لتثبيته منحتاج عربون، ورح نتواصل معك بالتفاصيل.</p>
+        <p className="track-note">
+          طلبك مقبول 🎉 لتثبيته منحتاج عربون
+          {order.deposit_required && <> بقيمة <strong dir="ltr">{formatMoney(order.deposit_required)}</strong></>}
+          ، ورح نتواصل معك بتفاصيل التحويل.
+        </p>
       )}
       {order.status === 'rejected' && order.admin_message && (
         <p className="track-note track-note--sad">للأسف ما قدرنا ناخد هالطلب: {order.admin_message}</p>
@@ -113,7 +118,7 @@ function OrderView({ order, onChange }) {
                 <small>{item.colors} · «{item.custom_text}»</small>
               </td>
               <td>× {item.quantity}</td>
-              <td>{item.unit_price ? formatMoney(item.unit_price * item.quantity) : '—'}</td>
+              <td>{item.unit_price ? <Price usd={item.unit_price * item.quantity} /> : '—'}</td>
             </tr>
           ))}
         </tbody>
@@ -121,17 +126,28 @@ function OrderView({ order, onChange }) {
 
       <div className="order-summary order-summary--flat">
         {order.delivery_method === 'damascus' && (
-          <div><span>التوصيل</span><strong>{formatMoney(order.delivery_fee)}</strong></div>
+          <div><span>التوصيل</span><strong><Price usd={order.delivery_fee} /></strong></div>
         )}
         <div className="order-summary__total">
           <span>المجموع</span>
-          <strong>{order.total ? formatMoney(order.total) : 'بيتأكد بعد المراجعة'}</strong>
+          <strong>{order.total ? <Price usd={order.total} /> : 'بيتأكد بعد المراجعة'}</strong>
         </div>
+        {order.deposit_required && !['rejected', 'cancelled'].includes(order.status) && (
+          <div className="deposit-line">
+            <span>العربون المطلوب</span>
+            <strong>
+              <Price usd={order.deposit_required} />
+              <small className={Number(order.paid) >= Number(order.deposit_required) ? 'deposit-ok' : 'deposit-due'}>
+                {Number(order.paid) >= Number(order.deposit_required) ? 'تم استلام العربون ✓' : 'لسا ما وصل'}
+              </small>
+            </strong>
+          </div>
+        )}
         {Number(order.paid) > 0 && (
           <>
-            <div><span>المدفوع</span><strong>{formatMoney(order.paid)}</strong></div>
+            <div><span>المدفوع</span><strong><Price usd={order.paid} /></strong></div>
             {order.remaining !== null && (
-              <div><span>الباقي</span><strong>{formatMoney(order.remaining)}</strong></div>
+              <div><span>الباقي</span><strong><Price usd={order.remaining} /></strong></div>
             )}
           </>
         )}

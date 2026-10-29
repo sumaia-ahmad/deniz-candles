@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { formatDate, formatMoney, STATUS } from '../orderStatus'
+import { priceText, useSypRate } from '../currency'
 import { cleanAmount } from '../numberInput'
 import { adminApi } from './adminApi'
 
@@ -17,17 +18,18 @@ const ACTION_LABELS = {
 }
 
 // Ready-to-copy messages for the customer, in Arabic (FR-16d).
-function customerMessage(order) {
+function customerMessage(order, rate) {
   const link = `${window.location.origin}/track/${order.code}`
   const hello = `أهلين ${order.customer_name} 🤍`
   const hasFavors = order.items.some(item => item.product_kind === 'favor')
+  const deposit = order.deposit_required ? ` بقيمة ${priceText(order.deposit_required, rate)}` : ''
   switch (order.status) {
     case 'approved':
       return `${hello}\nتم قبول طلبك من Deniz Studio (رقم ${order.code}).${
-        hasFavors ? '\nلتثبيت الطلب منحتاج عربون، ورح نبعتلك التفاصيل.' : ''
+        hasFavors || order.deposit_required ? `\nلتثبيت الطلب منحتاج عربون${deposit}، ورح نبعتلك تفاصيل التحويل.` : ''
       }\nفيكِ تتابعي طلبك من هون: ${link}`
     case 'awaiting_deposit':
-      return `${hello}\nطلبك رقم ${order.code} مقبول 🎉 لتثبيته منحتاج عربون. رح نبعتلك تفاصيل التحويل.\n${link}`
+      return `${hello}\nطلبك رقم ${order.code} مقبول 🎉 لتثبيته منحتاج عربون${deposit}. رح نبعتلك تفاصيل التحويل.\n${link}`
     case 'changes_proposed':
       return `${hello}\nبخصوص طلبك رقم ${order.code}: ${order.admin_message}${
         order.proposed_event_date ? `\nالتاريخ المقترح: ${formatDate(order.proposed_event_date)}` : ''
@@ -51,7 +53,8 @@ function customerMessage(order) {
 
 function MessageBox({ order }) {
   const [copied, setCopied] = useState(false)
-  const text = customerMessage(order)
+  const rate = useSypRate()
+  const text = customerMessage(order, rate)
 
   async function copy() {
     await navigator.clipboard.writeText(text)

@@ -46,6 +46,9 @@ export const adminApi = {
   markPaymentReceived: id => request(`/api/admin/orders/payments/${id}/received`, { method: 'POST' }),
   deletePayment: id => request(`/api/admin/orders/payments/${id}`, { method: 'DELETE' }),
 
+  settings: () => request('/api/settings'),
+  updateSettings: changes => request('/api/admin/settings', { method: 'PUT', body: changes }),
+
   zones: () => request('/api/admin/delivery-zones'),
   createZone: zone => request('/api/admin/delivery-zones', { method: 'POST', body: zone }),
   updateZone: (id, changes) => request(`/api/admin/delivery-zones/${id}`, { method: 'PATCH', body: changes }),

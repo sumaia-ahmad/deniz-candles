@@ -48,3 +48,16 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* Dollar price with the Syrian pound equivalent */
+.price {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.price__syp {
+  font-size: 0.8em;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}

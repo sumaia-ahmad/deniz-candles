@@ -242,3 +242,13 @@ class Payment(db.Model):
     received_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     order = db.relationship("Order", back_populates="payments")
+
+
+class Setting(db.Model):
+    """Simple key/value settings the admin can change (e.g. the dollar exchange rate)."""
+
+    __tablename__ = "settings"
+
+    key = db.Column(db.String(50), primary_key=True)
+    value = db.Column(db.String(200), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)

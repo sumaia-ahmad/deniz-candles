@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { fetchCatalog, fetchZones, placeOrder } from '../api'
 import PageHeader from '../components/PageHeader'
+import Price from '../components/Price'
+import { priceText, useSypRate } from '../currency'
 import { cleanWholeNumber } from '../numberInput'
 import { formatMoney } from '../orderStatus'
 import '../order.css'
@@ -30,6 +32,7 @@ function addDays(days) {
 }
 
 function ItemRow({ item, products, index, canRemove, onChange, onRemove }) {
+  const rate = useSypRate()
   const product = products.find(p => p.id === Number(item.product_id))
   const size = product?.sizes.find(s => s.id === Number(item.size_id))
 
@@ -74,7 +77,7 @@ function ItemRow({ item, products, index, canRemove, onChange, onRemove }) {
             <select value={item.size_id} onChange={e => onChange({ ...item, size_id: e.target.value })} required>
               {product.sizes.map(s => (
                 <option key={s.id} value={s.id}>
-                  {s.name_ar}{s.price ? ` · ${formatMoney(s.price)}` : ''}
+                  {s.name_ar}{s.price ? ` · ${priceText(s.price, rate)}` : ''}
                 </option>
               ))}
             </select>
@@ -118,9 +121,13 @@ function ItemRow({ item, products, index, canRemove, onChange, onRemove }) {
 
       {size && (
         <p className="order-item__price">
-          {size.price
-            ? `${formatMoney(size.price)} للقطعة · ${formatMoney(size.price * (Number(item.quantity) || 0))}`
-            : 'السعر بيتأكد بعد مراجعة الطلب'}
+          {size.price ? (
+            <>
+              {formatMoney(size.price)} للقطعة · <Price usd={size.price * (Number(item.quantity) || 0)} />
+            </>
+          ) : (
+            'السعر بيتأكد بعد مراجعة الطلب'
+          )}
         </p>
       )}
     </div>
@@ -130,6 +137,7 @@ function ItemRow({ item, products, index, canRemove, onChange, onRemove }) {
 function OrderPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const rate = useSypRate()
 
   const [products, setProducts] = useState([])
   const [zones, setZones] = useState([])
@@ -295,7 +303,7 @@ function OrderPage() {
                     <select value={form.zone_id} onChange={e => update('zone_id', e.target.value)} required>
                       <option value="">اختاري منطقتك...</option>
                       {zones.map(z => (
-                        <option key={z.id} value={z.id}>{z.name_ar} · {formatMoney(z.fee)}</option>
+                        <option key={z.id} value={z.id}>{z.name_ar} · {priceText(z.fee, rate)}</option>
                       ))}
                     </select>
                   </label>
@@ -363,13 +371,13 @@ function OrderPage() {
             </section>
 
             <section className="order-summary">
-              <div><span>القطع</span><strong>{formatMoney(totals.sum)}</strong></div>
+              <div><span>القطع</span><strong><Price usd={totals.sum} /></strong></div>
               {form.delivery_method === 'damascus' && (
-                <div><span>التوصيل</span><strong>{zone ? formatMoney(zone.fee) : '—'}</strong></div>
+                <div><span>التوصيل</span><strong>{zone ? <Price usd={zone.fee} /> : '—'}</strong></div>
               )}
               <div className="order-summary__total">
                 <span>المجموع</span>
-                <strong>{formatMoney(totals.sum + deliveryFee)}</strong>
+                <strong><Price usd={totals.sum + deliveryFee} /></strong>
               </div>
 
               {error && <p className="order-error" role="alert">{error}</p>}

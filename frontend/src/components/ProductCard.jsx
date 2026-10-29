@@ -1,3 +1,5 @@
+import Price from './Price'
+
 function ProductCard({ product, onOpen }) {
   return (
     <li className="card">
@@ -9,7 +11,7 @@ function ProductCard({ product, onOpen }) {
           )}
         </div>
         <h3 className="card__title">{product.name_ar}</h3>
-        <p className="card__price">{product.sizes[0]?.price ? `$${product.sizes[0].price}` : 'السعر قريباً'}</p>
+        <p className="card__price">{product.sizes[0]?.price ? <Price usd={product.sizes[0].price} /> : 'السعر قريباً'}</p>
       </button>
     </li>
   )

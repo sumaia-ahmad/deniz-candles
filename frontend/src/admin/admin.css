@@ -769,3 +769,10 @@
   align-items: center;
   gap: 10px;
 }
+
+.settings-card {
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

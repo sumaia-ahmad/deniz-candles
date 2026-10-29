@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { instagramUrl } from '../data/catalog'
+import Price from './Price'
 
 function ProductModal({ product, onClose }) {
   const [activeIndex, setActiveIndex] = useState(0)
@@ -51,7 +52,7 @@ function ProductModal({ product, onClose }) {
 
         <div className="modal__info">
           <h3 className="modal__title">{product.name_ar}</h3>
-          <p className="modal__price">{product.sizes[0]?.price ? `$${product.sizes[0].price}` : 'السعر قريباً'}</p>
+          <p className="modal__price">{product.sizes[0]?.price ? <Price usd={product.sizes[0].price} /> : 'السعر قريباً'}</p>
           <Link to={`/order?product=${product.id}`} className="btn btn--primary">
             اطلبي هالقطعة
           </Link>
