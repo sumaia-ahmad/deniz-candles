@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminApi } from './adminApi'
+import { cleanAmount, cleanWholeNumber } from './inputs'
 
 const KIND_TITLES = { favor: 'Favors', gift: 'Gifts' }
 
@@ -56,12 +57,11 @@ function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
         <div className="money-input">
           <span>$</span>
           <input
-            type="number"
-            min="0"
-            step="0.01"
+            type="text"
             inputMode="decimal"
+            autoComplete="off"
             value={draft.price}
-            onChange={e => update('price', e.target.value)}
+            onChange={e => update('price', cleanAmount(e.target.value))}
             placeholder="Price"
             aria-label="Price"
           />
@@ -69,11 +69,11 @@ function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
       </td>
       <td>
         <input
-          type="number"
-          min="0"
-          max="365"
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
           value={draft.min_lead_days}
-          onChange={e => update('min_lead_days', e.target.value)}
+          onChange={e => update('min_lead_days', cleanWholeNumber(e.target.value))}
           aria-label="Minimum days before the event"
           className="input-short"
         />
@@ -175,11 +175,11 @@ function ProductCard({ product, onChange, onError }) {
           <div className="money-input">
             <span>$</span>
             <input
-              type="number"
-              min="0"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
               value={newSize.price}
-              onChange={e => setNewSize({ ...newSize, price: e.target.value })}
+              onChange={e => setNewSize({ ...newSize, price: cleanAmount(e.target.value) })}
               placeholder="Price"
             />
           </div>

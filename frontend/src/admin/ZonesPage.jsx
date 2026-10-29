@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminApi } from './adminApi'
+import { cleanAmount } from './inputs'
 
 function ZoneRow({ zone, onSaved, onDeleted, onError }) {
   const [draft, setDraft] = useState({ name_ar: zone.name_ar, fee: zone.fee })
@@ -39,11 +40,11 @@ function ZoneRow({ zone, onSaved, onDeleted, onError }) {
         <div className="money-input">
           <span>$</span>
           <input
-            type="number"
-            min="0"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
             value={draft.fee}
-            onChange={e => setDraft({ ...draft, fee: e.target.value })}
+            onChange={e => setDraft({ ...draft, fee: cleanAmount(e.target.value) })}
             aria-label="Delivery fee"
           />
         </div>
@@ -124,11 +125,11 @@ function ZonesPage({ onSessionEnded }) {
         <div className="money-input">
           <span>$</span>
           <input
-            type="number"
-            min="0"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
             value={newZone.fee}
-            onChange={e => setNewZone({ ...newZone, fee: e.target.value })}
+            onChange={e => setNewZone({ ...newZone, fee: cleanAmount(e.target.value) })}
             placeholder="Fee"
             required
           />
