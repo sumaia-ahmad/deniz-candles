@@ -1,33 +1,38 @@
 import { useEffect, useState } from 'react'
 import { formatMoney } from './orderStatus'
 
-// The dollar exchange rate is set by the admin (Dashboard -> Settings) and shared by every price on the site.
-let ratePromise = null
+// Site settings set by the admin (Dashboard -> Settings): the dollar exchange rate and the
+// transfer details customers pay to. Loaded once and shared by the whole site.
+let settingsPromise = null
 
-function loadRate() {
-  if (!ratePromise) {
-    ratePromise = fetch('/api/settings')
+function loadSettings() {
+  if (!settingsPromise) {
+    settingsPromise = fetch('/api/settings')
       .then(response => (response.ok ? response.json() : {}))
-      .then(settings => (settings.usd_to_syp ? Number(settings.usd_to_syp) : null))
-      .catch(() => null)
+      .catch(() => ({}))
   }
-  return ratePromise
+  return settingsPromise
 }
 
 export function forgetRate() {
-  ratePromise = null
+  settingsPromise = null
 }
 
-export function useSypRate() {
-  const [rate, setRate] = useState(null)
+export function useSiteSettings() {
+  const [settings, setSettings] = useState({})
   useEffect(() => {
     let active = true
-    loadRate().then(value => active && setRate(value))
+    loadSettings().then(value => active && setSettings(value))
     return () => {
       active = false
     }
   }, [])
-  return rate
+  return settings
+}
+
+export function useSypRate() {
+  const settings = useSiteSettings()
+  return settings.usd_to_syp ? Number(settings.usd_to_syp) : null
 }
 
 // 25 dollars at 13000 -> "325,000 ل.س"

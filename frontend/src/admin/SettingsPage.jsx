@@ -7,6 +7,7 @@ import { adminApi } from './adminApi'
 function SettingsPage({ onSessionEnded }) {
   const [settings, setSettings] = useState(null)
   const [rate, setRate] = useState('')
+  const [transfer, setTransfer] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -17,6 +18,7 @@ function SettingsPage({ onSessionEnded }) {
       .then(data => {
         setSettings(data)
         setRate(data.usd_to_syp ?? '')
+        setTransfer(data.transfer_details ?? '')
       })
       .catch(err => (err.status === 401 ? onSessionEnded() : setError(err.message)))
   }, [onSessionEnded])
@@ -26,9 +28,10 @@ function SettingsPage({ onSessionEnded }) {
     setSaving(true)
     setError('')
     try {
-      const data = await adminApi.updateSettings({ usd_to_syp: rate })
+      const data = await adminApi.updateSettings({ usd_to_syp: rate, transfer_details: transfer })
       setSettings(data)
       setRate(data.usd_to_syp ?? '')
+      setTransfer(data.transfer_details ?? '')
       forgetRate() // the website picks up the new rate on its next load
       setSaved(true)
     } catch (err) {
@@ -78,6 +81,23 @@ function SettingsPage({ onSessionEnded }) {
         {settings.usd_to_syp_updated_at && (
           <p className="page-head__hint">Last updated {formatDate(settings.usd_to_syp_updated_at, 'en-GB')}</p>
         )}
+
+        <h3 className="card-title settings-card__section">Transfer details</h3>
+        <p className="page-head__hint">
+          Where customers send the deposit or payment. Shown on their tracking page and in your ready-to-copy
+          messages whenever they have something to pay.
+        </p>
+        <textarea
+          rows={3}
+          dir="auto"
+          value={transfer}
+          maxLength={200}
+          onChange={e => {
+            setTransfer(e.target.value)
+            setSaved(false)
+          }}
+          placeholder="e.g. سيرياتيل كاش: 09xx xxx xxx باسم ..."
+        />
         {error && <p className="form-error">{error}</p>}
         <div className="action-buttons">
           <button type="submit" className="btn-small btn-small--primary" disabled={saving}>

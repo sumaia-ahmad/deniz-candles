@@ -494,8 +494,16 @@ def add_payment(order_id):
         received_at=utcnow() if status == "received" else None,
     )
     order.payments.append(payment)
+    confirm_if_deposit_received(order)
     db.session.commit()
     return order_detail(order), 201
+
+
+def confirm_if_deposit_received(order):
+    """Once the whole deposit has arrived, an order waiting for it becomes confirmed."""
+    db.session.flush()
+    if order.status == "awaiting_deposit" and order.deposit_required and order.paid >= order.deposit_required:
+        order.status = "confirmed"
 
 
 def get_payment_or_404(payment_id):
@@ -512,6 +520,7 @@ def mark_received(payment_id):
     payment = get_payment_or_404(payment_id)
     payment.status = "received"
     payment.received_at = utcnow()
+    confirm_if_deposit_received(payment.order)
     db.session.commit()
     return order_detail(payment.order)
 

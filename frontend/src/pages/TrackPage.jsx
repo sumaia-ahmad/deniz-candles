@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { fetchOrder, respondToChanges } from '../api'
 import PageHeader from '../components/PageHeader'
 import Price from '../components/Price'
+import { useSiteSettings } from '../currency'
 import { formatDate, formatMoney, STATUS, STEPS } from '../orderStatus'
 import '../order.css'
 
@@ -39,9 +40,29 @@ function Progress({ status }) {
   )
 }
 
+function TransferDetails({ details }) {
+  if (!details) return <p className="transfer-box__fallback">رح نتواصل معك بتفاصيل التحويل.</p>
+  return (
+    <div className="transfer-box">
+      <span>معلومات التحويل</span>
+      <p>{details}</p>
+    </div>
+  )
+}
+
 function OrderView({ order, onChange }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const { transfer_details: transferDetails } = useSiteSettings()
+
+  const depositPaid = order.deposit_required && Number(order.paid) >= Number(order.deposit_required)
+  const waitingForDeposit = order.status === 'awaiting_deposit' && !depositPaid
+  // Governorate orders are paid in full by transfer before shipping (BR-4).
+  const fullPaymentDue =
+    order.delivery_method === 'governorate' &&
+    ['approved', 'confirmed', 'in_progress', 'ready'].includes(order.status) &&
+    order.remaining !== null &&
+    Number(order.remaining) > 0
 
   async function respond(accept) {
     setBusy(true)
@@ -70,12 +91,26 @@ function OrderView({ order, onChange }) {
       {order.status === 'pending_review' && (
         <p className="track-note">طلبك وصلنا، وعم نراجعه. رح نتواصل معك قريباً لنأكده.</p>
       )}
-      {order.status === 'awaiting_deposit' && (
-        <p className="track-note">
-          طلبك مقبول 🎉 لتثبيته منحتاج عربون
-          {order.deposit_required && <> بقيمة <strong dir="ltr">{formatMoney(order.deposit_required)}</strong></>}
-          ، ورح نتواصل معك بتفاصيل التحويل.
-        </p>
+      {waitingForDeposit && (
+        <div className="track-note">
+          <p>
+            طلبك مقبول 🎉 لتثبيته منحتاج عربون
+            {order.deposit_required && <> بقيمة <strong dir="ltr">{formatMoney(order.deposit_required)}</strong></>}.
+          </p>
+          <TransferDetails details={transferDetails} />
+        </div>
+      )}
+      {order.status === 'awaiting_deposit' && depositPaid && (
+        <p className="track-note">وصلنا العربون، شكراً 🤍 رح نأكد طلبك قريباً.</p>
+      )}
+      {fullPaymentDue && (
+        <div className="track-note">
+          <p>
+            الشحن للمحافظات بيكون بعد تحويل المبلغ كامل
+            {' '}(<strong dir="ltr">{formatMoney(order.remaining)}</strong>).
+          </p>
+          <TransferDetails details={transferDetails} />
+        </div>
       )}
       {order.status === 'rejected' && order.admin_message && (
         <p className="track-note track-note--sad">للأسف ما قدرنا ناخد هالطلب: {order.admin_message}</p>

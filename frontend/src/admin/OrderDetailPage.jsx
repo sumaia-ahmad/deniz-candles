@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { formatDate, formatMoney, STATUS } from '../orderStatus'
-import { priceText, useSypRate } from '../currency'
+import { priceText, useSiteSettings } from '../currency'
 import { cleanAmount } from '../numberInput'
 import { adminApi } from './adminApi'
 
@@ -18,18 +18,19 @@ const ACTION_LABELS = {
 }
 
 // Ready-to-copy messages for the customer, in Arabic (FR-16d).
-function customerMessage(order, rate) {
+function customerMessage(order, rate, transferDetails) {
   const link = `${window.location.origin}/track/${order.code}`
   const hello = `أهلين ${order.customer_name} 🤍`
   const hasFavors = order.items.some(item => item.product_kind === 'favor')
   const deposit = order.deposit_required ? ` بقيمة ${priceText(order.deposit_required, rate)}` : ''
+  const howToPay = transferDetails ? `\nمعلومات التحويل:\n${transferDetails}` : '\nرح نبعتلك تفاصيل التحويل.'
   switch (order.status) {
     case 'approved':
       return `${hello}\nتم قبول طلبك من Deniz Studio (رقم ${order.code}).${
-        hasFavors || order.deposit_required ? `\nلتثبيت الطلب منحتاج عربون${deposit}، ورح نبعتلك تفاصيل التحويل.` : ''
+        hasFavors || order.deposit_required ? `\nلتثبيت الطلب منحتاج عربون${deposit}.${howToPay}` : ''
       }\nفيكِ تتابعي طلبك من هون: ${link}`
     case 'awaiting_deposit':
-      return `${hello}\nطلبك رقم ${order.code} مقبول 🎉 لتثبيته منحتاج عربون${deposit}. رح نبعتلك تفاصيل التحويل.\n${link}`
+      return `${hello}\nطلبك رقم ${order.code} مقبول 🎉 لتثبيته منحتاج عربون${deposit}.${howToPay}\n${link}`
     case 'changes_proposed':
       return `${hello}\nبخصوص طلبك رقم ${order.code}: ${order.admin_message}${
         order.proposed_event_date ? `\nالتاريخ المقترح: ${formatDate(order.proposed_event_date)}` : ''
@@ -53,8 +54,9 @@ function customerMessage(order, rate) {
 
 function MessageBox({ order }) {
   const [copied, setCopied] = useState(false)
-  const rate = useSypRate()
-  const text = customerMessage(order, rate)
+  const settings = useSiteSettings()
+  const rate = settings.usd_to_syp ? Number(settings.usd_to_syp) : null
+  const text = customerMessage(order, rate, settings.transfer_details)
 
   async function copy() {
     await navigator.clipboard.writeText(text)
@@ -331,7 +333,7 @@ function PaymentsPanel({ order, onUpdated, onError }) {
           {form.method === 'transfer' ? (
             <>
               <label className="field">
-                <span>Transfer number</span>
+                <span>Transfer reference from the customer (optional)</span>
                 <input dir="ltr" value={form.transfer_number} onChange={e => setForm({ ...form, transfer_number: e.target.value })} />
               </label>
               <label className="field">

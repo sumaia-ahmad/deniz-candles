@@ -15,3 +15,11 @@ def test_invalid_rates_are_rejected(admin_client):
 
 def test_only_the_admin_changes_the_rate(client, assistant_client):
     assert assistant_client.put("/api/admin/settings", json={"usd_to_syp": "1"}).status_code == 403
+
+
+def test_transfer_details_are_shown_to_customers(admin_client, client):
+    admin_client.put("/api/admin/settings", json={"transfer_details": "سيرياتيل كاش: 0999999999"})
+    assert client.get("/api/settings").get_json()["transfer_details"] == "سيرياتيل كاش: 0999999999"
+
+    admin_client.put("/api/admin/settings", json={"transfer_details": ""})
+    assert client.get("/api/settings").get_json()["transfer_details"] is None

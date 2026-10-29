@@ -105,3 +105,24 @@ def test_assistant_cannot_record_payments(client, catalog):
     login(client, "helper")
     order_id = client.get("/api/admin/orders").get_json()[0]["id"]
     assert pay(client, order_id).status_code == 403
+
+
+def test_order_waiting_for_deposit_is_confirmed_when_it_arrives(client, catalog):
+    _, order_id = new_order(client, catalog, kind="favor")
+    client.patch(f"/api/admin/orders/{order_id}", json={"deposit_required": "20"})
+    move(client, order_id, "approved")
+    move(client, order_id, "awaiting_deposit")
+
+    assert pay(client, order_id, amount="10").get_json()["status"] == "awaiting_deposit"  # half isn't enough
+    assert pay(client, order_id, amount="10").get_json()["status"] == "confirmed"
+
+
+def test_cash_deposit_confirms_when_marked_received(client, catalog):
+    _, order_id = new_order(client, catalog, kind="favor")
+    client.patch(f"/api/admin/orders/{order_id}", json={"deposit_required": "20"})
+    move(client, order_id, "approved")
+    move(client, order_id, "awaiting_deposit")
+    detail = pay(client, order_id, method="cash", status="with_driver", amount="20").get_json()
+    assert detail["status"] == "awaiting_deposit"  # still with the driver
+    payment_id = detail["payments"][0]["id"]
+    assert client.post(f"/api/admin/orders/payments/{payment_id}/received").get_json()["status"] == "confirmed"
