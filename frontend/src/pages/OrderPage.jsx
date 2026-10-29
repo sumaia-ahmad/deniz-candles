@@ -310,12 +310,12 @@ function OrderPage() {
                 )}
                 <label className="form-field form-field--wide">
                   <span>العنوان *</span>
-                  <input value={form.address} onChange={e => update('address', e.target.value)} maxLength={300} placeholder="الحي، الشارع، أقرب نقطة دالة" required />
+                  <input value={form.address} onChange={e => update('address', e.target.value)} maxLength={300} required />
                 </label>
               </div>
               {form.delivery_method === 'governorate' && (
                 <p className="hint">
-                  📦 الشحن عن طريق شركة القدموس. أجرة الشحن بتدفعيها للشركة عند الاستلام، ولازم تحويل المبلغ كامل قبل الشحن.
+                  📦 الشحن عن طريق شركة القدموس. أجرة الشحن تُدفع للشركة عند الاستلام، ويجب تحويل المبلغ كامل للطلب قبل الشحن.
                 </p>
               )}
             </section>
