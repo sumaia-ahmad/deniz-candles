@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import './App.css'
 import logo from './assets/logo.png'
 import heroMainImg from './assets/hero.jpg'
@@ -51,9 +52,10 @@ function App() {
             <a href="#favors">توزيعات</a>
             <a href="#gifts">هدايا</a>
             <a href="#story">قصتنا</a>
-            <a href={instagramUrl} target="_blank" rel="noreferrer" className="nav__cta">
+            <Link to="/track">تتبّع طلبك</Link>
+            <Link to="/order" className="nav__cta">
               اطلبي الآن
-            </a>
+            </Link>
           </nav>
         </div>
       </header>

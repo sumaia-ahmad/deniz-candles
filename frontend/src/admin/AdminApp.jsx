@@ -3,6 +3,8 @@ import { Navigate, NavLink, Route, Routes } from 'react-router-dom'
 import logo from '../assets/logo.png'
 import { adminApi } from './adminApi'
 import LoginPage from './LoginPage'
+import OrderDetailPage from './OrderDetailPage'
+import OrdersPage from './OrdersPage'
 import ProductsPage from './ProductsPage'
 import ZonesPage from './ZonesPage'
 import './admin.css'
@@ -36,6 +38,7 @@ function AdminApp() {
           <small>Dashboard</small>
         </div>
         <nav className="admin-nav">
+          <NavLink to="/admin/orders">Orders</NavLink>
           {isAdmin && <NavLink to="/admin/products">Products & Prices</NavLink>}
           {isAdmin && <NavLink to="/admin/zones">Delivery Zones</NavLink>}
         </nav>
@@ -48,16 +51,14 @@ function AdminApp() {
       </header>
 
       <main className="admin-main">
-        {isAdmin ? (
-          <Routes>
-            <Route index element={<Navigate to="products" replace />} />
-            <Route path="products" element={<ProductsPage onSessionEnded={handleSessionEnded} />} />
-            <Route path="zones" element={<ZonesPage onSessionEnded={handleSessionEnded} />} />
-            <Route path="*" element={<Navigate to="products" replace />} />
-          </Routes>
-        ) : (
-          <p className="admin-status">Hi {user.username} 👋 The orders page is coming soon.</p>
-        )}
+        <Routes>
+          <Route index element={<Navigate to="orders" replace />} />
+          <Route path="orders" element={<OrdersPage onSessionEnded={handleSessionEnded} />} />
+          <Route path="orders/:orderId" element={<OrderDetailPage onSessionEnded={handleSessionEnded} />} />
+          {isAdmin && <Route path="products" element={<ProductsPage onSessionEnded={handleSessionEnded} />} />}
+          {isAdmin && <Route path="zones" element={<ZonesPage onSessionEnded={handleSessionEnded} />} />}
+          <Route path="*" element={<Navigate to="orders" replace />} />
+        </Routes>
       </main>
     </div>
   )

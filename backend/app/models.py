@@ -1,6 +1,13 @@
+from datetime import datetime, timezone
+from decimal import Decimal
+
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .extensions import db
+
+
+def utcnow():
+    return datetime.now(timezone.utc)
 
 
 class Occasion(db.Model):
@@ -82,3 +89,109 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+
+class Customer(db.Model):
+    __tablename__ = "customers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(30), unique=True, nullable=False)
+    instagram = db.Column(db.String(60), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+    orders = db.relationship("Order", back_populates="customer")
+
+
+class Order(db.Model):
+    __tablename__ = "orders"
+
+    # Lifecycle (FR-16). An online order is only a request until it is approved (BR-10).
+    STATUSES = (
+        "pending_review",
+        "changes_proposed",
+        "approved",
+        "awaiting_deposit",
+        "confirmed",
+        "in_progress",
+        "ready",
+        "delivered",
+        "rejected",
+        "cancelled",
+    )
+    # Which status the admin may move an order to from each status.
+    TRANSITIONS = {
+        "pending_review": ("approved", "changes_proposed", "rejected"),
+        "changes_proposed": ("approved", "rejected", "cancelled"),
+        "approved": ("awaiting_deposit", "confirmed", "cancelled"),
+        "awaiting_deposit": ("confirmed", "cancelled"),
+        "confirmed": ("in_progress", "cancelled"),
+        "in_progress": ("ready", "cancelled"),
+        "ready": ("delivered",),
+        "delivered": (),
+        "rejected": (),
+        "cancelled": (),
+    }
+    CLOSED = ("delivered", "rejected", "cancelled")
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    status = db.Column(db.String(30), nullable=False, default="pending_review")
+    event_date = db.Column(db.Date, nullable=False)
+
+    delivery_method = db.Column(db.String(20), nullable=False)  # "damascus" or "governorate"
+    zone_name = db.Column(db.String(100), nullable=True)  # snapshot of the zone at order time
+    governorate = db.Column(db.String(60), nullable=True)
+    address = db.Column(db.String(300), nullable=False)
+    delivery_fee = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+
+    notes = db.Column(db.Text, nullable=False)
+    reference_image = db.Column(db.String(100), nullable=False)
+
+    # Filled in when the admin rejects or proposes changes.
+    admin_message = db.Column(db.Text, nullable=True)
+    proposed_event_date = db.Column(db.Date, nullable=True)
+
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
+
+    customer = db.relationship("Customer", back_populates="orders")
+    items = db.relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+
+    @property
+    def items_total(self):
+        """Sum of the items, or None while any item still has no price."""
+        if any(item.unit_price is None for item in self.items):
+            return None
+        return sum((item.unit_price * item.quantity for item in self.items), Decimal("0"))
+
+    @property
+    def total(self):
+        items_total = self.items_total
+        return None if items_total is None else items_total + self.delivery_fee
+
+    @property
+    def piece_count(self):
+        return sum(item.quantity for item in self.items)
+
+
+class OrderItem(db.Model):
+    __tablename__ = "order_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=True)
+    size_id = db.Column(db.Integer, db.ForeignKey("product_sizes.id"), nullable=True)
+
+    # Snapshot at order time, so later catalog edits never change this order (BR-5).
+    product_name = db.Column(db.String(150), nullable=False)
+    product_kind = db.Column(db.String(10), nullable=False)
+    size_name = db.Column(db.String(50), nullable=False)
+    unit_price = db.Column(db.Numeric(10, 2), nullable=True)
+
+    quantity = db.Column(db.Integer, nullable=False)
+    colors = db.Column(db.String(200), nullable=False)
+    custom_text = db.Column(db.String(200), nullable=False)
+
+    order = db.relationship("Order", back_populates="items")

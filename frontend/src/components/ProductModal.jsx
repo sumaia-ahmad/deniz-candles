@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { instagramUrl } from '../data/catalog'
 
 function ProductModal({ product, onClose }) {
@@ -51,8 +52,11 @@ function ProductModal({ product, onClose }) {
         <div className="modal__info">
           <h3 className="modal__title">{product.name_ar}</h3>
           <p className="modal__price">{product.sizes[0]?.price ? `$${product.sizes[0].price}` : 'السعر قريباً'}</p>
-          <a href={instagramUrl} target="_blank" rel="noreferrer" className="btn btn--primary">
-            اطلبي عبر إنستغرام
+          <Link to={`/order?product=${product.id}`} className="btn btn--primary">
+            اطلبي هالقطعة
+          </Link>
+          <a href={instagramUrl} target="_blank" rel="noreferrer" className="modal__insta">
+            أو تواصلي معنا عبر إنستغرام
           </a>
         </div>
       </div>

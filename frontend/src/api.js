@@ -15,3 +15,38 @@ export async function fetchCatalog() {
     products: await productsResponse.json(),
   }
 }
+
+export async function fetchZones() {
+  const response = await fetch('/api/delivery-zones')
+  if (!response.ok) throw new Error('Could not load delivery zones')
+  return response.json()
+}
+
+async function readJson(response) {
+  const data = await response.json().catch(() => null)
+  if (!response.ok) {
+    const error = new Error(data?.error || 'صار في مشكلة، جربي مرة تانية')
+    error.status = response.status
+    throw error
+  }
+  return data
+}
+
+// formData holds the order details (as JSON) and the reference image.
+export async function placeOrder(formData) {
+  return readJson(await fetch('/api/orders', { method: 'POST', body: formData }))
+}
+
+export async function fetchOrder(code) {
+  return readJson(await fetch(`/api/orders/${encodeURIComponent(code)}`))
+}
+
+export async function respondToChanges(code, accept) {
+  return readJson(
+    await fetch(`/api/orders/${encodeURIComponent(code)}/respond`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accept }),
+    }),
+  )
+}

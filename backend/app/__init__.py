@@ -17,6 +17,8 @@ def create_app(test_config=None):
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     # "Remember me" keeps the dashboard signed in for 30 days.
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+    # Largest upload accepted (the reference image on the order form).
+    app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
     if test_config:
         app.config.update(test_config)
     app.json.ensure_ascii = False
@@ -40,9 +42,17 @@ def create_app(test_config=None):
     from .admin import bp as admin_bp
     from .auth import bp as auth_bp
     from .catalog import bp as catalog_bp
+    from .orders import admin_bp as admin_orders_bp
+    from .orders import public_bp as orders_bp
 
     app.register_blueprint(catalog_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(orders_bp)
+    app.register_blueprint(admin_orders_bp)
+
+    @app.errorhandler(413)
+    def too_large(_error):
+        return {"error": "الصورة كبيرة كتير (الحد الأقصى 10MB)"}, 413
 
     return app

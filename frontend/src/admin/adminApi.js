@@ -29,6 +29,10 @@ export const adminApi = {
   updateSize: (id, changes) => request(`/api/admin/sizes/${id}`, { method: 'PATCH', body: changes }),
   deleteSize: id => request(`/api/admin/sizes/${id}`, { method: 'DELETE' }),
 
+  orders: status => request(`/api/admin/orders${status ? `?status=${status}` : ''}`),
+  order: id => request(`/api/admin/orders/${id}`),
+  changeOrderStatus: (id, change) => request(`/api/admin/orders/${id}/status`, { method: 'POST', body: change }),
+
   zones: () => request('/api/admin/delivery-zones'),
   createZone: zone => request('/api/admin/delivery-zones', { method: 'POST', body: zone }),
   updateZone: (id, changes) => request(`/api/admin/delivery-zones/${id}`, { method: 'PATCH', body: changes }),

@@ -6,8 +6,9 @@ from app.models import Product, ProductSize, User
 
 
 @pytest.fixture
-def app():
+def app(tmp_path):
     app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:", "SECRET_KEY": "test"})
+    app.instance_path = str(tmp_path)  # uploaded images go to a temporary folder
     with app.app_context():
         db.create_all()
         for username, role in (("deniz", "admin"), ("helper", "assistant")):
