@@ -1,18 +1,16 @@
 import json
-import os
 import re
 import secrets
 import time
-import uuid
 from collections import defaultdict, deque
 from datetime import date, timedelta
 from decimal import Decimal
 
 from flask import Blueprint, abort, current_app, jsonify, request, send_from_directory
-from PIL import Image, UnidentifiedImageError
 
 from .auth import login_required
 from .extensions import db
+from .images import NotAnImage, save_image, uploads_dir
 from .models import Customer, DeliveryZone, Order, OrderItem, Product, ProductSize
 
 public_bp = Blueprint("orders", __name__, url_prefix="/api/orders")
@@ -81,9 +79,7 @@ def check_rate_limit():
 
 
 def upload_folder():
-    folder = os.path.join(current_app.instance_path, "uploads")
-    os.makedirs(folder, exist_ok=True)
-    return folder
+    return uploads_dir()
 
 
 def save_reference_image(file_storage):
@@ -94,16 +90,9 @@ def save_reference_image(file_storage):
     if file_storage is None or not file_storage.filename:
         return None
     try:
-        image = Image.open(file_storage.stream)
-        image.load()
-    except (UnidentifiedImageError, OSError):
+        return save_image(file_storage, upload_folder(), MAX_IMAGE_SIDE)
+    except NotAnImage:
         raise OrderError("الملف المرفوع لازم يكون صورة (JPG أو PNG)") from None
-
-    image = image.convert("RGB")
-    image.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE))
-    filename = f"{uuid.uuid4().hex}.jpg"
-    image.save(os.path.join(upload_folder(), filename), "JPEG", quality=85, optimize=True)
-    return filename
 
 
 def clean_phone(value):

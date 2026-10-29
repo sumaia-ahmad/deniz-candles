@@ -1,9 +1,16 @@
-from flask import Blueprint, abort, request, url_for
+import os
+
+from flask import Blueprint, abort, current_app, request, send_from_directory
 
 from .extensions import db
+from .images import uploads_dir
 from .models import DeliveryZone, Occasion, Product
 
 bp = Blueprint("catalog", __name__, url_prefix="/api")
+
+
+def product_image_url(filename):
+    return f"/api/media/products/{filename}"
 
 
 def product_to_dict(product):
@@ -22,10 +29,7 @@ def product_to_dict(product):
             }
             for size in product.sizes
         ],
-        "images": [
-            url_for("static", filename=f"products/{image.filename}")
-            for image in product.images
-        ],
+        "images": [product_image_url(image.filename) for image in product.images],
     }
 
 
@@ -67,3 +71,12 @@ def list_delivery_zones():
         db.select(DeliveryZone).where(DeliveryZone.is_active.is_(True)).order_by(DeliveryZone.name_ar)
     )
     return [{"id": z.id, "name_ar": z.name_ar, "fee": str(z.fee)} for z in zones]
+
+
+@bp.get("/media/products/<filename>")
+def product_image(filename):
+    """Product photos: uploaded from the dashboard, or the starting photos shipped with the project."""
+    uploaded = uploads_dir("products")
+    if os.path.exists(os.path.join(uploaded, filename)):
+        return send_from_directory(uploaded, filename, max_age=86400)
+    return send_from_directory(os.path.join(current_app.static_folder, "products"), filename, max_age=86400)

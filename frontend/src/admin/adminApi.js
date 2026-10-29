@@ -1,10 +1,12 @@
 // Requests used by the dashboard. The session cookie set at login is sent automatically.
 
 async function request(path, { method = 'GET', body } = {}) {
+  // FormData (file uploads) is sent as-is; anything else as JSON.
+  const isForm = body instanceof FormData
   const response = await fetch(path, {
     method,
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
+    headers: body && !isForm ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
   })
   if (response.status === 204) return null
 
@@ -23,7 +25,13 @@ export const adminApi = {
     request('/api/auth/login', { method: 'POST', body: { username, password, remember } }),
   logout: () => request('/api/auth/logout', { method: 'POST' }),
 
+  occasions: () => request('/api/occasions'),
   products: () => request('/api/admin/products'),
+  createProduct: formData => request('/api/admin/products', { method: 'POST', body: formData }),
+  deleteProduct: id => request(`/api/admin/products/${id}`, { method: 'DELETE' }),
+  addPhotos: (productId, formData) => request(`/api/admin/products/${productId}/photos`, { method: 'POST', body: formData }),
+  deletePhoto: id => request(`/api/admin/photos/${id}`, { method: 'DELETE' }),
+  makeCover: id => request(`/api/admin/photos/${id}/cover`, { method: 'POST' }),
   updateProduct: (id, changes) => request(`/api/admin/products/${id}`, { method: 'PATCH', body: changes }),
   addSize: (productId, size) => request(`/api/admin/products/${productId}/sizes`, { method: 'POST', body: size }),
   updateSize: (id, changes) => request(`/api/admin/sizes/${id}`, { method: 'PATCH', body: changes }),

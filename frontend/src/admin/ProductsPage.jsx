@@ -93,7 +93,161 @@ function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
   )
 }
 
-function ProductCard({ product, onChange, onError }) {
+function PhotoStrip({ product, onChange, onError }) {
+  const [busy, setBusy] = useState(false)
+
+  async function run(action) {
+    setBusy(true)
+    try {
+      onChange(await action())
+    } catch (err) {
+      onError(err)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function upload(files) {
+    if (!files.length) return
+    const data = new FormData()
+    Array.from(files).forEach(file => data.append('photos', file))
+    run(() => adminApi.addPhotos(product.id, data))
+  }
+
+  return (
+    <div className={busy ? 'photo-strip photo-strip--busy' : 'photo-strip'}>
+      {product.photos.map((photo, index) => (
+        <div key={photo.id} className="photo-strip__item">
+          <img src={photo.url} alt="" />
+          {index === 0 ? (
+            <span className="photo-strip__cover">Cover</span>
+          ) : (
+            <button type="button" className="photo-strip__btn" title="Make cover" onClick={() => run(() => adminApi.makeCover(photo.id))}>
+              ★
+            </button>
+          )}
+          {product.photos.length > 1 && (
+            <button
+              type="button"
+              className="photo-strip__btn photo-strip__btn--delete"
+              title="Delete photo"
+              onClick={() => window.confirm('Delete this photo?') && run(() => adminApi.deletePhoto(photo.id))}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      ))}
+      {product.photos.length < 10 && (
+        <label className="photo-strip__add" title="Add photos">
+          +
+          <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e => upload(e.target.files)} hidden />
+        </label>
+      )}
+    </div>
+  )
+}
+
+function NewProductForm({ occasions, onCreated, onCancel, onError }) {
+  const [form, setForm] = useState({ kind: 'favor', occasion: '', name_ar: '', size_name: 'قياسي', price: '', min_lead_days: '14' })
+  const [photos, setPhotos] = useState([])
+  const [saving, setSaving] = useState(false)
+
+  function update(field, value) {
+    setForm(f => ({ ...f, [field]: value }))
+  }
+
+  function chooseKind(kind) {
+    // Favors need 14 days and an occasion; gifts start at 3 days (BR-9).
+    setForm(f => ({ ...f, kind, min_lead_days: kind === 'favor' ? '14' : '3' }))
+  }
+
+  async function submit(event) {
+    event.preventDefault()
+    const data = new FormData()
+    Object.entries(form).forEach(([key, value]) => data.append(key, value))
+    photos.forEach(file => data.append('photos', file))
+    setSaving(true)
+    try {
+      onCreated(await adminApi.createProduct(data))
+    } catch (err) {
+      onError(err)
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form className="admin-card new-product" onSubmit={submit}>
+      <h2 className="card-title">New product</h2>
+      <div className="new-product__grid">
+        <div className="field">
+          <span>Type</span>
+          <div className="segmented">
+            {['favor', 'gift'].map(kind => (
+              <button
+                key={kind}
+                type="button"
+                className={form.kind === kind ? 'segmented__on' : ''}
+                onClick={() => chooseKind(kind)}
+              >
+                {kind === 'favor' ? 'Favor' : 'Gift'}
+              </button>
+            ))}
+          </div>
+        </div>
+        {form.kind === 'favor' && (
+          <label className="field">
+            <span>Occasion</span>
+            <select value={form.occasion} onChange={e => update('occasion', e.target.value)} required>
+              <option value="">Choose...</option>
+              {occasions.map(o => (
+                <option key={o.slug} value={o.slug}>{o.name_en}</option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label className="field new-product__wide">
+          <span>Name (shown to customers)</span>
+          <input dir="auto" value={form.name_ar} onChange={e => update('name_ar', e.target.value)} placeholder="e.g. شمعة قلب" required />
+        </label>
+        <label className="field">
+          <span>Size</span>
+          <input dir="auto" value={form.size_name} onChange={e => update('size_name', e.target.value)} required />
+        </label>
+        <label className="field">
+          <span>Price ($)</span>
+          <input type="text" inputMode="decimal" autoComplete="off" value={form.price} onChange={e => update('price', cleanAmount(e.target.value))} placeholder="Optional" />
+        </label>
+        <label className="field">
+          <span>Min. days</span>
+          <input type="text" inputMode="numeric" autoComplete="off" value={form.min_lead_days} onChange={e => update('min_lead_days', cleanWholeNumber(e.target.value))} required />
+        </label>
+        <label className="field new-product__wide">
+          <span>Photos (the first one is the cover)</span>
+          <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e => setPhotos(Array.from(e.target.files))} required />
+        </label>
+      </div>
+      {photos.length > 0 && (
+        <div className="photo-strip">
+          {photos.map((file, index) => (
+            <div key={index} className="photo-strip__item">
+              <img src={URL.createObjectURL(file)} alt="" />
+              {index === 0 && <span className="photo-strip__cover">Cover</span>}
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="action-buttons">
+        <button type="submit" className="btn-small btn-small--primary" disabled={saving}>
+          {saving ? 'Saving...' : 'Create product'}
+        </button>
+        <button type="button" className="btn-small" onClick={onCancel}>Cancel</button>
+      </div>
+    </form>
+  )
+}
+
+function ProductCard({ product, onChange, onDeleted, onError }) {
   const [adding, setAdding] = useState(false)
   const [newSize, setNewSize] = useState({ name_ar: '', price: '' })
 
@@ -108,6 +262,16 @@ function ProductCard({ product, onChange, onError }) {
   async function toggleVisible() {
     try {
       onChange(await adminApi.updateProduct(product.id, { is_visible: !product.is_visible }))
+    } catch (err) {
+      onError(err)
+    }
+  }
+
+  async function removeProduct() {
+    if (!window.confirm(`Delete "${product.name_ar}" for good? (To keep it but stop showing it, untick "Visible on site".)`)) return
+    try {
+      await adminApi.deleteProduct(product.id)
+      onDeleted(product.id)
     } catch (err) {
       onError(err)
     }
@@ -138,6 +302,8 @@ function ProductCard({ product, onChange, onError }) {
           <span>Visible on site</span>
         </label>
       </div>
+
+      <PhotoStrip product={product} onChange={onChange} onError={onError} />
 
       <div className="table-wrap">
         <table className="admin-table">
@@ -187,9 +353,14 @@ function ProductCard({ product, onChange, onError }) {
           <button type="button" className="btn-small" onClick={() => setAdding(false)}>Cancel</button>
         </form>
       ) : (
-        <button type="button" className="admin-link" onClick={() => setAdding(true)}>
-          + Add size
-        </button>
+        <div className="card-footer">
+          <button type="button" className="admin-link" onClick={() => setAdding(true)}>
+            + Add size
+          </button>
+          <button type="button" className="admin-link admin-link--danger" onClick={removeProduct}>
+            Delete product
+          </button>
+        </div>
       )}
     </article>
   )
@@ -199,11 +370,17 @@ function ProductsPage({ onSessionEnded }) {
   const [products, setProducts] = useState(null)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [occasions, setOccasions] = useState([])
+  const [creating, setCreating] = useState(false)
 
   function handleError(err) {
     if (err.status === 401) onSessionEnded()
     else setError(err.message)
   }
+
+  useEffect(() => {
+    adminApi.occasions().then(setOccasions).catch(() => {})
+  }, [])
 
   useEffect(() => {
     adminApi
@@ -232,14 +409,32 @@ function ProductsPage({ onSessionEnded }) {
             {withoutPrice > 0 && <strong> {withoutPrice} products still have no price.</strong>}
           </p>
         </div>
-        <input
-          className="search"
-          type="search"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
+        <div className="page-head__tools">
+          <button type="button" className="btn-small btn-small--primary" onClick={() => setCreating(true)}>
+            + New product
+          </button>
+          <input
+            className="search"
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
           placeholder="Search products..." dir="auto"
-        />
+          />
+        </div>
       </div>
+
+      {creating && (
+        <NewProductForm
+          occasions={occasions}
+          onCreated={product => {
+            setProducts([...products, product])
+            setCreating(false)
+            setError('')
+          }}
+          onCancel={() => setCreating(false)}
+          onError={handleError}
+        />
+      )}
 
       {error && (
         <p className="form-error" role="alert">
@@ -257,7 +452,13 @@ function ProductsPage({ onSessionEnded }) {
             {visible
               .filter(p => p.kind === kind)
               .map(product => (
-                <ProductCard key={product.id} product={product} onChange={replaceProduct} onError={handleError} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onChange={replaceProduct}
+                  onDeleted={id => setProducts(products.filter(p => p.id !== id))}
+                  onError={handleError}
+                />
               ))}
           </div>
         </div>

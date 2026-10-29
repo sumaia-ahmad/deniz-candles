@@ -569,3 +569,138 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Product photos & new product ---------- */
+.photo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.photo-strip--busy {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.photo-strip__item {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.photo-strip__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.photo-strip__cover {
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-rose);
+  padding: 0 6px;
+  border-radius: 999px;
+}
+
+.photo-strip__btn {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-brown);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.photo-strip__btn--delete {
+  left: auto;
+  right: 2px;
+  color: var(--color-red);
+  font-size: 1rem;
+}
+
+.photo-strip__add {
+  width: 64px;
+  height: 64px;
+  border: 2px dashed var(--color-cream-dark);
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+  color: var(--color-pink-dark);
+  cursor: pointer;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-link--danger {
+  color: var(--color-red);
+  font-weight: 500;
+}
+
+.page-head__tools {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.new-product {
+  margin-bottom: 20px;
+}
+
+.new-product__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.new-product__wide {
+  grid-column: 1 / -1;
+}
+
+.admin select {
+  font: inherit;
+  padding: 7px 10px;
+  border: 1.5px solid var(--color-cream-dark);
+  border-radius: 10px;
+  background: var(--color-white);
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1.5px solid var(--color-cream-dark);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.segmented button {
+  font: inherit;
+  font-weight: 700;
+  border: none;
+  background: var(--color-white);
+  color: var(--color-text-muted);
+  padding: 6px 18px;
+  cursor: pointer;
+}
+
+.segmented .segmented__on {
+  background: var(--color-pink-dark);
+  color: var(--color-white);
+}
