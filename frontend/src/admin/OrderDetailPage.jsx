@@ -272,11 +272,15 @@ function OrderDetailPage({ onSessionEnded }) {
 
           <div className="admin-card">
             <h3 className="card-title">Notes from the customer</h3>
-            <p dir="auto" className="notes">{order.notes}</p>
+            <p dir="auto" className="notes">{order.notes || <span className="muted">No notes.</span>}</p>
             <h3 className="card-title">Reference image</h3>
-            <a href={order.reference_image_url} target="_blank" rel="noreferrer">
-              <img src={order.reference_image_url} alt="Reference" className="reference-image" />
-            </a>
+            {order.reference_image_url ? (
+              <a href={order.reference_image_url} target="_blank" rel="noreferrer">
+                <img src={order.reference_image_url} alt="Reference" className="reference-image" />
+              </a>
+            ) : (
+              <p className="muted">No image attached.</p>
+            )}
           </div>
 
           {order.admin_message && (

@@ -87,9 +87,12 @@ def upload_folder():
 
 
 def save_reference_image(file_storage):
-    """Check the upload is a real image, shrink it and re-save as JPEG (drops hidden metadata)."""
+    """Check the upload is a real image, shrink it and re-save as JPEG (drops hidden metadata).
+
+    The reference image is optional, so no file means no image.
+    """
     if file_storage is None or not file_storage.filename:
-        raise OrderError("الصورة المرجعية مطلوبة")
+        return None
     try:
         image = Image.open(file_storage.stream)
         image.load()
@@ -193,7 +196,7 @@ def order_detail(order):
         "customer_instagram": order.customer.instagram,
         "address": order.address,
         "notes": order.notes,
-        "reference_image_url": f"/api/admin/orders/{order.id}/reference-image",
+        "reference_image_url": f"/api/admin/orders/{order.id}/reference-image" if order.reference_image else None,
         "next_statuses": list(Order.TRANSITIONS[order.status]),
         "workload": week_workload(order),
     }
@@ -217,7 +220,7 @@ def create_order():
     name = required_text(data.get("name"), "الاسم مطلوب", 100)
     phone = clean_phone(data.get("phone"))
     instagram = (data.get("instagram") or "").strip().lstrip("@")[:60] or None
-    notes = required_text(data.get("notes"), "الملاحظات مطلوبة", 2000)
+    notes = (data.get("notes") or "").strip()[:2000]  # optional; "" when empty
     address = required_text(data.get("address"), "العنوان مطلوب", 300)
     event_date = parse_date(data.get("event_date"), "تاريخ المناسبة مطلوب")
 
@@ -272,7 +275,7 @@ def create_order():
     else:
         raise OrderError("اختاري طريقة الاستلام")
 
-    image_name = save_reference_image(request.files.get("reference_image"))
+    image_name = save_reference_image(request.files.get("reference_image")) or ""  # optional
 
     customer = db.session.scalar(db.select(Customer).where(Customer.phone == phone))
     if customer is None:
@@ -394,4 +397,6 @@ def change_status(order_id):
 @login_required
 def reference_image(order_id):
     order = get_order_or_404(order_id)
+    if not order.reference_image:
+        abort(404)
     return send_from_directory(upload_folder(), order.reference_image)

@@ -146,8 +146,8 @@ class Order(db.Model):
     address = db.Column(db.String(300), nullable=False)
     delivery_fee = db.Column(db.Numeric(10, 2), nullable=False, default=0)
 
-    notes = db.Column(db.Text, nullable=False)
-    reference_image = db.Column(db.String(100), nullable=False)
+    notes = db.Column(db.Text, nullable=False, default="")  # optional, "" when empty
+    reference_image = db.Column(db.String(100), nullable=False, default="")  # optional, "" when none
 
     # Filled in when the admin rejects or proposes changes.
     admin_message = db.Column(db.Text, nullable=True)

@@ -93,7 +93,7 @@ def test_gift_needs_3_days_notice(client, catalog):
     assert place(client, order_payload(catalog, kind="gift", days_ahead=3)).status_code == 201
 
 
-@pytest.mark.parametrize("field", ["name", "phone", "notes", "address", "event_date"])
+@pytest.mark.parametrize("field", ["name", "phone", "address", "event_date"])
 def test_required_fields(client, catalog, field):
     assert place(client, order_payload(catalog, **{field: ""})).status_code == 400
 
@@ -104,8 +104,12 @@ def test_colors_and_text_are_required_per_item(client, catalog):
     assert place(client, payload).status_code == 400
 
 
-def test_reference_image_is_required_and_must_be_an_image(client, catalog):
-    assert place(client, order_payload(catalog), image=False).status_code == 400
+def test_reference_image_and_notes_are_optional(client, catalog):
+    response = place(client, order_payload(catalog, notes=""), image=False)
+    assert response.status_code == 201
+
+
+def test_uploaded_reference_image_must_be_an_image(client, catalog):
     fake = {"order": json.dumps(order_payload(catalog)), "reference_image": (io.BytesIO(b"not an image"), "x.png")}
     assert client.post("/api/orders", data=fake, content_type="multipart/form-data").status_code == 400
 

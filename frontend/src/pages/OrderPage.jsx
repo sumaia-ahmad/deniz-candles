@@ -202,7 +202,7 @@ function OrderPage() {
     }
     const data = new FormData()
     data.append('order', JSON.stringify(payload))
-    data.append('reference_image', image)
+    if (image) data.append('reference_image', image)
     data.append('website', form.website)
 
     setSubmitting(true)
@@ -343,13 +343,13 @@ function OrderPage() {
               <h2>تفاصيل إضافية</h2>
               <div className="form-grid">
                 <label className="form-field form-field--wide">
-                  <span>صورة مرجعية *</span>
-                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setImage(e.target.files[0] || null)} required />
+                  <span>صورة مرجعية (اختياري)</span>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setImage(e.target.files[0] || null)} />
                   <small>صورة للشكل أو الألوان اللي بدك ياهن (حتى 10MB)</small>
                 </label>
                 <label className="form-field form-field--wide">
-                  <span>ملاحظات *</span>
-                  <textarea rows={4} value={form.notes} onChange={e => update('notes', e.target.value)} maxLength={2000} required />
+                  <span>ملاحظات (اختياري)</span>
+                  <textarea rows={4} value={form.notes} onChange={e => update('notes', e.target.value)} maxLength={2000} />
                 </label>
               </div>
               {/* Hidden from people; bots that fill it in get rejected (spam protection). */}
