@@ -8,10 +8,10 @@ from decimal import Decimal
 
 from flask import Blueprint, abort, current_app, jsonify, request, send_from_directory
 
-from .auth import login_required
+from .auth import admin_required, login_required
 from .extensions import db
 from .images import NotAnImage, save_image, uploads_dir
-from .models import Customer, DeliveryZone, Order, OrderItem, Product, ProductSize
+from .models import Customer, DeliveryZone, Order, OrderItem, Payment, Product, ProductSize, utcnow
 
 public_bp = Blueprint("orders", __name__, url_prefix="/api/orders")
 admin_bp = Blueprint("admin_orders", __name__, url_prefix="/api/admin/orders")
@@ -133,6 +133,9 @@ def order_to_public_dict(order):
         "items": [item_to_dict(i) for i in order.items],
         "items_total": money(order.items_total),
         "total": money(order.total),
+        "deposit_required": money(order.deposit_required),
+        "paid": money(order.paid),
+        "remaining": money(order.remaining),
         "created_at": order.created_at.isoformat(),
     }
 
@@ -188,7 +191,43 @@ def order_detail(order):
         "reference_image_url": f"/api/admin/orders/{order.id}/reference-image" if order.reference_image else None,
         "next_statuses": list(Order.TRANSITIONS[order.status]),
         "workload": week_workload(order),
+        "has_favors": order.has_favors,
+        "with_driver": money(order.with_driver),
+        "payments": [payment_to_dict(p) for p in order.payments],
     }
+
+
+def payment_to_dict(payment):
+    return {
+        "id": payment.id,
+        "method": payment.method,
+        "amount": money(payment.amount),
+        "is_deposit": payment.is_deposit,
+        "status": payment.status,
+        "transfer_number": payment.transfer_number,
+        "note": payment.note,
+        "receipt_url": f"/api/admin/orders/payments/{payment.id}/receipt" if payment.receipt_image else None,
+        "created_at": payment.created_at.isoformat(),
+    }
+
+
+def payment_warnings(order, new_status):
+    """Soft payment rules (BR-7): warn, never block. The admin decides."""
+    warnings = []
+    if new_status == "confirmed" and order.has_favors and order.deposit_required and order.paid < order.deposit_required:
+        warnings.append(
+            f"The deposit is not paid yet ({money(order.paid)} of {money(order.deposit_required)} received)."
+        )
+    if (
+        new_status == "delivered"
+        and order.delivery_method == "governorate"
+        and order.remaining is not None
+        and order.remaining > 0
+    ):
+        warnings.append(f"Governorate orders should be fully paid before shipping ({money(order.remaining)} still due).")
+    if new_status == "delivered" and order.with_driver > 0:
+        warnings.append(f"{money(order.with_driver)} is still with the delivery driver.")
+    return warnings
 
 
 # ---------- Public: place and track orders ----------
@@ -359,6 +398,11 @@ def change_status(order_id):
     if new_status not in Order.TRANSITIONS[order.status]:
         raise OrderError(f"Cannot move an order from '{order.status}' to '{new_status}'.")
 
+    warnings = payment_warnings(order, new_status)
+    if warnings and not data.get("confirm"):
+        # Ask the dashboard to confirm; sending again with "confirm": true goes ahead.
+        return jsonify(warnings=warnings), 409
+
     message = (data.get("message") or "").strip()
     if new_status == "rejected":
         if not message:
@@ -389,3 +433,103 @@ def reference_image(order_id):
     if not order.reference_image:
         abort(404)
     return send_from_directory(upload_folder(), order.reference_image)
+
+
+# ---------- Dashboard: payments (admin only) ----------
+
+
+def clean_amount(value):
+    try:
+        amount = Decimal(str(value).strip())
+    except Exception:
+        raise OrderError("Amount must be a number.") from None
+    if amount <= 0 or amount.as_tuple().exponent < -2:
+        raise OrderError("Amount must be a positive number with at most 2 decimal places.")
+    return amount
+
+
+@admin_bp.patch("/<int:order_id>")
+@admin_required
+def update_order(order_id):
+    order = get_order_or_404(order_id)
+    data = request.get_json(silent=True) or {}
+    if "deposit_required" in data:
+        value = data["deposit_required"]
+        order.deposit_required = None if value in (None, "") else clean_amount(value)
+    db.session.commit()
+    return order_detail(order)
+
+
+@admin_bp.post("/<int:order_id>/payments")
+@admin_required
+def add_payment(order_id):
+    """Record a transfer (FR-19) or cash, received or still with the driver (FR-20)."""
+    order = get_order_or_404(order_id)
+    form = request.form
+    method = form.get("method")
+    if method not in Payment.METHODS:
+        raise OrderError("Choose transfer or cash.")
+    status = form.get("status") or "received"
+    if status not in Payment.STATUSES or (method == "transfer" and status != "received"):
+        raise OrderError("Invalid payment status.")
+    if status == "with_driver" and order.delivery_method != "damascus":
+        raise OrderError("Cash on delivery is only for Damascus orders (BR-3).")
+
+    receipt = request.files.get("receipt")
+    receipt_name = None
+    if receipt and receipt.filename:
+        try:
+            receipt_name = save_image(receipt, uploads_dir("receipts"), MAX_IMAGE_SIDE)
+        except NotAnImage:
+            raise OrderError("The receipt must be a photo (JPG or PNG).") from None
+
+    payment = Payment(
+        method=method,
+        amount=clean_amount(form.get("amount")),
+        is_deposit=form.get("is_deposit") == "true",
+        status=status,
+        transfer_number=(form.get("transfer_number") or "").strip()[:60] or None,
+        receipt_image=receipt_name,
+        note=(form.get("note") or "").strip()[:300] or None,
+        received_at=utcnow() if status == "received" else None,
+    )
+    order.payments.append(payment)
+    db.session.commit()
+    return order_detail(order), 201
+
+
+def get_payment_or_404(payment_id):
+    payment = db.session.get(Payment, payment_id)
+    if payment is None:
+        abort(404)
+    return payment
+
+
+@admin_bp.post("/payments/<int:payment_id>/received")
+@admin_required
+def mark_received(payment_id):
+    """The driver handed over the cash."""
+    payment = get_payment_or_404(payment_id)
+    payment.status = "received"
+    payment.received_at = utcnow()
+    db.session.commit()
+    return order_detail(payment.order)
+
+
+@admin_bp.delete("/payments/<int:payment_id>")
+@admin_required
+def delete_payment(payment_id):
+    payment = get_payment_or_404(payment_id)
+    order = payment.order
+    db.session.delete(payment)
+    db.session.commit()
+    return order_detail(order)
+
+
+@admin_bp.get("/payments/<int:payment_id>/receipt")
+@admin_required
+def payment_receipt(payment_id):
+    payment = get_payment_or_404(payment_id)
+    if not payment.receipt_image:
+        abort(404)
+    return send_from_directory(uploads_dir("receipts"), payment.receipt_image)

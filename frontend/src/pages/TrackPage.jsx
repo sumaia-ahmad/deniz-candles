@@ -127,6 +127,14 @@ function OrderView({ order, onChange }) {
           <span>المجموع</span>
           <strong>{order.total ? formatMoney(order.total) : 'بيتأكد بعد المراجعة'}</strong>
         </div>
+        {Number(order.paid) > 0 && (
+          <>
+            <div><span>المدفوع</span><strong>{formatMoney(order.paid)}</strong></div>
+            {order.remaining !== null && (
+              <div><span>الباقي</span><strong>{formatMoney(order.remaining)}</strong></div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )

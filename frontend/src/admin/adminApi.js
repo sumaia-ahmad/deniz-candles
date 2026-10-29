@@ -14,6 +14,7 @@ async function request(path, { method = 'GET', body } = {}) {
   if (!response.ok) {
     const error = new Error(data?.error || 'Something went wrong. Please try again.')
     error.status = response.status
+    error.warnings = data?.warnings // soft payment warnings (409) the admin can confirm
     throw error
   }
   return data
@@ -40,6 +41,10 @@ export const adminApi = {
   orders: status => request(`/api/admin/orders${status ? `?status=${status}` : ''}`),
   order: id => request(`/api/admin/orders/${id}`),
   changeOrderStatus: (id, change) => request(`/api/admin/orders/${id}/status`, { method: 'POST', body: change }),
+  updateOrder: (id, changes) => request(`/api/admin/orders/${id}`, { method: 'PATCH', body: changes }),
+  addPayment: (orderId, formData) => request(`/api/admin/orders/${orderId}/payments`, { method: 'POST', body: formData }),
+  markPaymentReceived: id => request(`/api/admin/orders/payments/${id}/received`, { method: 'POST' }),
+  deletePayment: id => request(`/api/admin/orders/payments/${id}`, { method: 'DELETE' }),
 
   zones: () => request('/api/admin/delivery-zones'),
   createZone: zone => request('/api/admin/delivery-zones', { method: 'POST', body: zone }),

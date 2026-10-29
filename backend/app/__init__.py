@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 
-from .extensions import db
+from .extensions import db, migrate
 
 
 def create_app(test_config=None):
@@ -25,11 +25,11 @@ def create_app(test_config=None):
 
     CORS(app)
     db.init_app(app)
+    migrate.init_app(app, db)
 
     from . import models  # noqa: F401  (registers the tables)
 
-    with app.app_context():
-        db.create_all()
+    # Tables are created and updated with migrations: `flask --app app db upgrade`.
 
     from .seed import seed_command
     from .users import create_user_command, list_users_command, reset_password_command

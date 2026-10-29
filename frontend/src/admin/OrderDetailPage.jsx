@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { formatDate, formatMoney, STATUS } from '../orderStatus'
+import { cleanAmount } from '../numberInput'
 import { adminApi } from './adminApi'
 
 const ACTION_LABELS = {
@@ -84,7 +85,16 @@ function ActionPanel({ order, onUpdated, onError }) {
       setMessage('')
       setProposedDate('')
     } catch (err) {
-      onError(err)
+      // Payment rules only warn (BR-7): show the warning and let the admin decide.
+      if (err.status === 409 && err.warnings) {
+        const goAhead = window.confirm(`${err.warnings.join('\n')}\n\nContinue anyway?`)
+        if (goAhead) {
+          setBusy(false)
+          return send(status, { ...extra, confirm: true })
+        }
+      } else {
+        onError(err)
+      }
     } finally {
       setBusy(false)
     }
@@ -194,7 +204,163 @@ function WorkloadPanel({ order }) {
   )
 }
 
-function OrderDetailPage({ onSessionEnded }) {
+function PaymentsPanel({ order, onUpdated, onError }) {
+  const [deposit, setDeposit] = useState(order.deposit_required ?? '')
+  const [adding, setAdding] = useState(false)
+  const [form, setForm] = useState({ method: 'transfer', status: 'received', amount: '', transfer_number: '', is_deposit: false })
+  const [receipt, setReceipt] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  const canCollectCash = order.delivery_method === 'damascus'
+  const depositChanged = String(deposit) !== String(order.deposit_required ?? '')
+
+  async function run(action) {
+    setBusy(true)
+    try {
+      const updated = await action()
+      onUpdated(updated)
+      return updated
+    } catch (err) {
+      onError(err)
+      return null
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function saveDeposit() {
+    const updated = await run(() => adminApi.updateOrder(order.id, { deposit_required: deposit }))
+    if (updated) setDeposit(updated.deposit_required ?? '')
+  }
+
+  async function addPayment(event) {
+    event.preventDefault()
+    const data = new FormData()
+    Object.entries(form).forEach(([key, value]) => data.append(key, String(value)))
+    if (receipt) data.append('receipt', receipt)
+    const updated = await run(() => adminApi.addPayment(order.id, data))
+    if (updated) {
+      setAdding(false)
+      setForm({ method: 'transfer', status: 'received', amount: '', transfer_number: '', is_deposit: false })
+      setReceipt(null)
+    }
+  }
+
+  return (
+    <div className="admin-card">
+      <h3 className="card-title">Payments</h3>
+
+      <dl className="money-summary">
+        <dt>Total</dt>
+        <dd>{formatMoney(order.total) ?? '—'}</dd>
+        <dt>Paid</dt>
+        <dd className="ok-text">{formatMoney(order.paid)}</dd>
+        {Number(order.with_driver) > 0 && (
+          <>
+            <dt>With driver</dt>
+            <dd className="warn-text">{formatMoney(order.with_driver)}</dd>
+          </>
+        )}
+        <dt>Remaining</dt>
+        <dd><strong>{formatMoney(order.remaining) ?? '—'}</strong></dd>
+      </dl>
+
+      <div className="deposit-row">
+        <span>Deposit required{order.has_favors ? '' : ' (optional for gifts)'}</span>
+        <div className="money-input">
+          <span>$</span>
+          <input type="text" inputMode="decimal" value={deposit} onChange={e => setDeposit(cleanAmount(e.target.value))} placeholder="None" />
+        </div>
+        <button type="button" className="btn-small btn-small--primary" onClick={saveDeposit} disabled={!depositChanged || busy}>
+          Save
+        </button>
+      </div>
+
+      {order.payments.length > 0 && (
+        <ul className="payment-list">
+          {order.payments.map(p => (
+            <li key={p.id}>
+              <div>
+                <strong>{formatMoney(p.amount)}</strong> · {p.method === 'transfer' ? 'Transfer' : 'Cash'}
+                {p.is_deposit && <span className="tag tag--done">Deposit</span>}
+                {p.status === 'with_driver' && <span className="tag tag--warn">With driver</span>}
+                <small className="muted">
+                  {' '}· {formatDate(p.created_at, 'en-GB')}
+                  {p.transfer_number && ` · #${p.transfer_number}`}
+                </small>
+              </div>
+              <div className="payment-list__actions">
+                {p.receipt_url && (
+                  <a href={p.receipt_url} target="_blank" rel="noreferrer" className="admin-link">Receipt</a>
+                )}
+                {p.status === 'with_driver' && (
+                  <button type="button" className="btn-small btn-small--primary" disabled={busy} onClick={() => run(() => adminApi.markPaymentReceived(p.id))}>
+                    Received
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="admin-link admin-link--danger"
+                  onClick={() => window.confirm('Delete this payment?') && run(() => adminApi.deletePayment(p.id))}
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {adding ? (
+        <form className="action-form" onSubmit={addPayment}>
+          <div className="segmented">
+            <button type="button" className={form.method === 'transfer' ? 'segmented__on' : ''} onClick={() => setForm({ ...form, method: 'transfer', status: 'received' })}>
+              Transfer
+            </button>
+            <button type="button" className={form.method === 'cash' ? 'segmented__on' : ''} onClick={() => setForm({ ...form, method: 'cash' })}>
+              Cash
+            </button>
+          </div>
+          <label className="field">
+            <span>Amount ($)</span>
+            <input type="text" inputMode="decimal" autoComplete="off" value={form.amount} onChange={e => setForm({ ...form, amount: cleanAmount(e.target.value) })} required />
+          </label>
+          {form.method === 'transfer' ? (
+            <>
+              <label className="field">
+                <span>Transfer number</span>
+                <input dir="ltr" value={form.transfer_number} onChange={e => setForm({ ...form, transfer_number: e.target.value })} />
+              </label>
+              <label className="field">
+                <span>Receipt photo (optional)</span>
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setReceipt(e.target.files[0] || null)} />
+              </label>
+            </>
+          ) : (
+            canCollectCash && (
+              <label className="switch">
+                <input type="checkbox" checked={form.status === 'with_driver'} onChange={e => setForm({ ...form, status: e.target.checked ? 'with_driver' : 'received' })} />
+                <span>Still with the delivery driver</span>
+              </label>
+            )
+          )}
+          <label className="switch">
+            <input type="checkbox" checked={form.is_deposit} onChange={e => setForm({ ...form, is_deposit: e.target.checked })} />
+            <span>This is the deposit</span>
+          </label>
+          <div className="action-buttons">
+            <button type="submit" className="btn-small btn-small--primary" disabled={busy}>Save payment</button>
+            <button type="button" className="btn-small" onClick={() => setAdding(false)}>Cancel</button>
+          </div>
+        </form>
+      ) : (
+        <button type="button" className="admin-link" onClick={() => setAdding(true)}>+ Add payment</button>
+      )}
+    </div>
+  )
+}
+
+function OrderDetailPage({ isAdmin, onSessionEnded }) {
   const { orderId } = useParams()
   const [result, setResult] = useState({ id: null })
   const [error, setError] = useState('')
@@ -301,6 +467,17 @@ function OrderDetailPage({ onSessionEnded }) {
             }}
             onError={handleError}
           />
+          {isAdmin && (
+            <PaymentsPanel
+              key={order.id}
+              order={order}
+              onUpdated={updated => {
+                setError('')
+                setResult({ id: orderId, order: updated })
+              }}
+              onError={handleError}
+            />
+          )}
           <MessageBox order={order} />
           <WorkloadPanel order={order} />
 

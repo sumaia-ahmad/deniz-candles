@@ -54,7 +54,7 @@ function AdminApp() {
         <Routes>
           <Route index element={<Navigate to="orders" replace />} />
           <Route path="orders" element={<OrdersPage onSessionEnded={handleSessionEnded} />} />
-          <Route path="orders/:orderId" element={<OrderDetailPage onSessionEnded={handleSessionEnded} />} />
+          <Route path="orders/:orderId" element={<OrderDetailPage isAdmin={isAdmin} onSessionEnded={handleSessionEnded} />} />
           {isAdmin && <Route path="products" element={<ProductsPage onSessionEnded={handleSessionEnded} />} />}
           {isAdmin && <Route path="zones" element={<ZonesPage onSessionEnded={handleSessionEnded} />} />}
           <Route path="*" element={<Navigate to="orders" replace />} />

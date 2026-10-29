@@ -12,6 +12,11 @@ port_in_use() { lsof -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
 
 echo "🕯️  Starting Deniz..."
 
+# Apply any database updates (migrations). Safe to run every time; existing data is kept.
+if ! (cd backend && source .venv/bin/activate && flask --app app db upgrade >/dev/null 2>&1); then
+  echo "⚠️  Could not update the database. Please tell Claude."
+fi
+
 # First run only: create the dashboard account.
 USERS=$(cd backend && source .venv/bin/activate && python -c "
 from app import create_app

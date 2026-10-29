@@ -149,6 +149,9 @@ class Order(db.Model):
     notes = db.Column(db.Text, nullable=False, default="")  # optional, "" when empty
     reference_image = db.Column(db.String(100), nullable=False, default="")  # optional, "" when none
 
+    # Deposit the admin asks for before confirming (favor orders, BR-6). Set per order.
+    deposit_required = db.Column(db.Numeric(10, 2), nullable=True)
+
     # Filled in when the admin rejects or proposes changes.
     admin_message = db.Column(db.Text, nullable=True)
     proposed_event_date = db.Column(db.Date, nullable=True)
@@ -158,6 +161,9 @@ class Order(db.Model):
 
     customer = db.relationship("Customer", back_populates="orders")
     items = db.relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    payments = db.relationship(
+        "Payment", back_populates="order", cascade="all, delete-orphan", order_by="Payment.created_at"
+    )
 
     @property
     def items_total(self):
@@ -174,6 +180,25 @@ class Order(db.Model):
     @property
     def piece_count(self):
         return sum(item.quantity for item in self.items)
+
+    @property
+    def has_favors(self):
+        return any(item.product_kind == "favor" for item in self.items)
+
+    @property
+    def paid(self):
+        """Money that has actually reached Deniz."""
+        return sum((p.amount for p in self.payments if p.status == "received"), Decimal("0"))
+
+    @property
+    def with_driver(self):
+        """Cash the delivery driver collected but has not handed over yet (FR-20)."""
+        return sum((p.amount for p in self.payments if p.status == "with_driver"), Decimal("0"))
+
+    @property
+    def remaining(self):
+        total = self.total
+        return None if total is None else total - self.paid
 
 
 class OrderItem(db.Model):
@@ -195,3 +220,25 @@ class OrderItem(db.Model):
     custom_text = db.Column(db.String(200), nullable=False)
 
     order = db.relationship("Order", back_populates="items")
+
+
+class Payment(db.Model):
+    __tablename__ = "payments"
+
+    METHODS = ("transfer", "cash")
+    STATUSES = ("received", "with_driver")
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id"), nullable=False)
+    method = db.Column(db.String(20), nullable=False)  # "transfer" or "cash"
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    is_deposit = db.Column(db.Boolean, nullable=False, default=False)
+    # "with_driver" = cash on delivery not yet handed over; becomes "received" once it is.
+    status = db.Column(db.String(20), nullable=False, default="received")
+    transfer_number = db.Column(db.String(60), nullable=True)
+    receipt_image = db.Column(db.String(100), nullable=True)
+    note = db.Column(db.String(300), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    received_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    order = db.relationship("Order", back_populates="payments")
