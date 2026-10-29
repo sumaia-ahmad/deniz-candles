@@ -16,6 +16,6 @@ export function cleanAmount(value) {
 }
 
 // "١٤" -> "14"
-export function cleanWholeNumber(value) {
-  return toLatinDigits(value).replace(/\D/g, '').slice(0, 3)
+export function cleanWholeNumber(value, maxDigits = 3) {
+  return toLatinDigits(value).replace(/\D/g, '').slice(0, maxDigits)
 }

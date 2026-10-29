@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminApi } from './adminApi'
-import { cleanAmount } from './inputs'
+import { cleanAmount } from '../numberInput'
 
 function ZoneRow({ zone, onSaved, onDeleted, onError }) {
   const [draft, setDraft] = useState({ name_ar: zone.name_ar, fee: zone.fee })

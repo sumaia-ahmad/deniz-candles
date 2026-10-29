@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminApi } from './adminApi'
-import { cleanAmount, cleanWholeNumber } from './inputs'
+import { cleanAmount, cleanWholeNumber } from '../numberInput'
 
 const KIND_TITLES = { favor: 'Favors', gift: 'Gifts' }
 

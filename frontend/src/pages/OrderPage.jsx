@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { fetchCatalog, fetchZones, placeOrder } from '../api'
 import PageHeader from '../components/PageHeader'
+import { cleanWholeNumber } from '../numberInput'
 import { formatMoney } from '../orderStatus'
 import '../order.css'
 
@@ -83,11 +84,11 @@ function ItemRow({ item, products, index, canRemove, onChange, onRemove }) {
         <label className="form-field">
           <span>العدد *</span>
           <input
-            type="number"
-            min="1"
-            max="2000"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
             value={item.quantity}
-            onChange={e => onChange({ ...item, quantity: e.target.value })}
+            onChange={e => onChange({ ...item, quantity: cleanWholeNumber(e.target.value, 4) })}
             required
           />
         </label>
@@ -172,14 +173,12 @@ function OrderPage() {
   const deliveryFee = form.delivery_method === 'damascus' && zone ? Number(zone.fee) : 0
   const totals = useMemo(() => {
     let sum = 0
-    let missingPrice = false
     items.forEach(item => {
       const size = products.find(p => p.id === Number(item.product_id))?.sizes.find(s => s.id === Number(item.size_id))
       if (!size) return
-      if (size.price === null) missingPrice = true
-      else sum += Number(size.price) * (Number(item.quantity) || 0)
+      if (size.price !== null) sum += Number(size.price) * (Number(item.quantity) || 0)
     })
-    return { sum, missingPrice }
+    return { sum }
   }, [items, products])
 
   async function handleSubmit(event) {
@@ -284,7 +283,7 @@ function OrderPage() {
                     checked={form.delivery_method === 'governorate'}
                     onChange={() => update('delivery_method', 'governorate')}
                   />
-                  شحن لمحافظة تانية
+                  شحن للمحافظات
                 </label>
               </div>
               {zones.length === 0 && <p className="hint">التوصيل داخل دمشق غير متاح من الموقع حالياً.</p>}
@@ -372,7 +371,6 @@ function OrderPage() {
                 <span>المجموع</span>
                 <strong>{formatMoney(totals.sum + deliveryFee)}</strong>
               </div>
-              {totals.missingPrice && <p className="hint">بعض القطع لسا ما إلها سعر، رح نأكد المجموع بعد مراجعة الطلب.</p>}
 
               {error && <p className="order-error" role="alert">{error}</p>}
               <button type="submit" className="btn btn--primary order-submit" disabled={submitting}>
