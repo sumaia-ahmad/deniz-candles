@@ -20,7 +20,7 @@ function CodeSearch({ initial = '' }) {
         if (code.trim()) navigate(`/track/${code.trim().toUpperCase()}`)
       }}
     >
-      <input dir="ltr" value={code} onChange={e => setCode(e.target.value)} placeholder="DZ-XXXXXXXX" aria-label="كود الطلب" />
+      <input dir="ltr" value={code} onChange={e => setCode(e.target.value)} placeholder="DZ-XXXXXXXX" aria-label="رمز الطلب" />
       <button type="submit" className="btn btn--primary">تتبّع</button>
     </form>
   )
@@ -42,7 +42,7 @@ function Progress({ status }) {
 }
 
 function TransferDetails({ details }) {
-  if (!details) return <p className="transfer-box__fallback">رح نتواصل معك بتفاصيل التحويل.</p>
+  if (!details) return <p className="transfer-box__fallback">سنتواصل معك لتزويدك بتفاصيل التحويل.</p>
   return (
     <div className="transfer-box">
       <span>معلومات التحويل</span>
@@ -165,7 +165,7 @@ function OrderView({ order, onChange }) {
       <div className="track-card__head">
         <div>
           <p className="track-card__code" dir="ltr">{order.code}</p>
-          <p>أهلين {order.customer_name} 🤍</p>
+          <p>أهلاً {order.customer_name} 🤍</p>
         </div>
         <span className={`status-pill status-pill--${STATUS[order.status].tone}`}>{STATUS[order.status].ar}</span>
       </div>
@@ -173,12 +173,12 @@ function OrderView({ order, onChange }) {
       <Progress status={order.status} />
 
       {order.status === 'pending_review' && (
-        <p className="track-note">طلبك وصلنا، وعم نراجعه. رح نتواصل معك قريباً لنأكده.</p>
+        <p className="track-note">تم استلام طلبك، وهو قيد المراجعة. سنتواصل معك قريباً لتأكيده.</p>
       )}
       {waitingForDeposit && (
         <div className="track-note">
           <p>
-            طلبك مقبول 🎉 لتثبيته منحتاج عربون
+            تمت الموافقة على طلبك 🎉 ولتثبيته يُرجى دفع عربون
             {order.deposit_required && <> بقيمة <strong dir="ltr">{formatMoney(order.deposit_required)}</strong></>}.
           </p>
           <TransferDetails details={transferDetails} />
@@ -190,12 +190,12 @@ function OrderView({ order, onChange }) {
         </div>
       )}
       {order.status === 'awaiting_deposit' && depositPaid && (
-        <p className="track-note">وصلنا العربون، شكراً 🤍 رح نأكد طلبك قريباً.</p>
+        <p className="track-note">تم استلام العربون، شكراً لك 🤍 سيتم تأكيد طلبك قريباً.</p>
       )}
       {fullPaymentDue && (
         <div className="track-note">
           <p>
-            الشحن للمحافظات بيكون بعد تحويل المبلغ كامل
+            يتم الشحن إلى المحافظات بعد تحويل كامل المبلغ
             {' '}(<strong dir="ltr">{formatMoney(order.remaining)}</strong>).
           </p>
           <TransferDetails details={transferDetails} />
@@ -204,12 +204,12 @@ function OrderView({ order, onChange }) {
       )}
       <PaymentReports reports={order.payment_reports} />
       {order.status === 'rejected' && order.admin_message && (
-        <p className="track-note track-note--sad">للأسف ما قدرنا ناخد هالطلب: {order.admin_message}</p>
+        <p className="track-note track-note--sad">نعتذر، تعذّر قبول هذا الطلب: {order.admin_message}</p>
       )}
 
       {order.status === 'changes_proposed' && (
         <div className="proposal">
-          <h3>عنا اقتراح تعديل على طلبك</h3>
+          <h3>لدينا اقتراح تعديل على طلبك</h3>
           <p>{order.admin_message}</p>
           {order.proposed_event_date && (
             <p>التاريخ المقترح: <strong>{formatDate(order.proposed_event_date)}</strong></p>
@@ -256,7 +256,7 @@ function OrderView({ order, onChange }) {
         )}
         <div className="order-summary__total">
           <span>المجموع</span>
-          <strong>{order.total ? <Price usd={order.total} /> : 'بيتأكد بعد المراجعة'}</strong>
+          <strong>{order.total ? <Price usd={order.total} /> : 'يُحدَّد بعد المراجعة'}</strong>
         </div>
         {order.deposit_required && !['rejected', 'cancelled'].includes(order.status) && (
           <div className="deposit-line">
@@ -264,7 +264,7 @@ function OrderView({ order, onChange }) {
             <strong>
               <Price usd={order.deposit_required} />
               <small className={Number(order.paid) >= Number(order.deposit_required) ? 'deposit-ok' : 'deposit-due'}>
-                {Number(order.paid) >= Number(order.deposit_required) ? 'تم استلام العربون ✓' : 'لسا ما وصل'}
+                {Number(order.paid) >= Number(order.deposit_required) ? 'تم استلام العربون ✓' : 'لم يُستلم بعد'}
               </small>
             </strong>
           </div>
@@ -311,7 +311,7 @@ function TrackPage() {
           <div className="success-banner">
             <h2>تم إرسال طلبك 🎉</h2>
             <p>
-              احفظي كود الطلب <strong dir="ltr">{order.code}</strong>، أو احفظي رابط هالصفحة، مشان تتابعي طلبك.
+              يرجى الاحتفاظ برمز الطلب <strong dir="ltr">{order.code}</strong> أو برابط هذه الصفحة لمتابعة طلبك.
             </p>
           </div>
         )}
@@ -319,9 +319,9 @@ function TrackPage() {
         <h1 className="order-page__title">تتبّع طلبك</h1>
         <CodeSearch initial={code || ''} />
 
-        {state === 'loading' && <p className="status">عم نجيب طلبك...</p>}
-        {state === 'not-found' && <p className="status">ما لقينا طلب بهالكود. تأكدي منه وجربي مرة تانية.</p>}
-        {state === 'error' && <p className="status">صار في مشكلة، جربي بعد شوي 🙏</p>}
+        {state === 'loading' && <p className="status">جارٍ تحميل الطلب...</p>}
+        {state === 'not-found' && <p className="status">لم نعثر على طلب بهذا الرمز. يرجى التحقق منه والمحاولة مجدداً.</p>}
+        {state === 'error' && <p className="status">حدث خطأ، يرجى المحاولة لاحقاً.</p>}
         {state === 'ready' && <OrderView order={order} onChange={setOrder} />}
       </main>
     </div>

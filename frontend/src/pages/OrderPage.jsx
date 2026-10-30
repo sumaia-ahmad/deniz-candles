@@ -126,7 +126,7 @@ function ItemRow({ item, products, index, canRemove, onChange, onRemove }) {
               {formatMoney(size.price)} للقطعة · <Price usd={size.price * (Number(item.quantity) || 0)} />
             </>
           ) : (
-            'السعر بيتأكد بعد مراجعة الطلب'
+            'يُحدَّد السعر بعد مراجعة الطلب'
           )}
         </p>
       )}
@@ -193,7 +193,7 @@ function OrderPage() {
     event.preventDefault()
     setError('')
     if (form.event_date && form.event_date < minDate) {
-      setError(`أقرب تاريخ ممكن لهالطلب هو ${minDate}`)
+      setError(`أقرب تاريخ متاح لهذا الطلب هو ${minDate}`)
       return
     }
     const payload = {
@@ -228,11 +228,11 @@ function OrderPage() {
       <main className="container order-page">
         <h1 className="order-page__title">اطلبي من Deniz</h1>
         <p className="order-page__intro">
-          عبّي التفاصيل، ورح نراجع طلبك ونتواصل معك لنأكده. الطلب ما بيعتبر مؤكد إلا بعد موافقتنا.
+          املئي التفاصيل، وسنراجع طلبك ونتواصل معك لتأكيده. لا يُعدّ الطلب مؤكداً إلا بعد موافقتنا.
         </p>
 
-        {loadState === 'loading' && <p className="status">عم نحمّل...</p>}
-        {loadState === 'error' && <p className="status">صار في مشكلة بالتحميل، جربي بعد شوي 🙏</p>}
+        {loadState === 'loading' && <p className="status">جارٍ التحميل...</p>}
+        {loadState === 'error' && <p className="status">تعذّر التحميل، يرجى المحاولة لاحقاً.</p>}
 
         {loadState === 'ready' && (
           <form className="order-form" onSubmit={handleSubmit}>
@@ -251,7 +251,7 @@ function OrderPage() {
               ))}
               {items.length < 20 && (
                 <button type="button" className="btn btn--ghost" onClick={() => setItems([...items, newItem()])}>
-                  + إضافة قطعة تانية
+                  + إضافة قطعة أخرى
                 </button>
               )}
             </section>
@@ -264,8 +264,8 @@ function OrderPage() {
                   <input type="date" min={minDate} value={form.event_date} onChange={e => update('event_date', e.target.value)} required />
                   {leadDays > 0 && (
                     <small className="date-hint">
-                      أقرب تاريخ متاح: <strong>{formatDate(minDate)}</strong>، لأنو هالطلب بيحتاج {leadDays} يوم على الأقل
-                      للتحضير.
+                      أقرب تاريخ متاح: <strong>{formatDate(minDate)}</strong>، إذ يحتاج هذا الطلب إلى {leadDays}{' '}
+                      {leadDays <= 10 ? 'أيام' : 'يوماً'} على الأقل للتحضير.
                     </small>
                   )}
                 </label>
@@ -353,7 +353,7 @@ function OrderPage() {
                 <label className="form-field form-field--wide">
                   <span>صورة مرجعية (اختياري)</span>
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setImage(e.target.files[0] || null)} />
-                  <small>صورة للشكل أو الألوان اللي بدك ياهن (حتى 10MB)</small>
+                  <small>صورة توضّح الشكل أو الألوان المطلوبة (حتى 10MB)</small>
                 </label>
                 <label className="form-field form-field--wide">
                   <span>ملاحظات (اختياري)</span>
@@ -383,7 +383,7 @@ function OrderPage() {
 
               {error && <p className="order-error" role="alert">{error}</p>}
               <button type="submit" className="btn btn--primary order-submit" disabled={submitting}>
-                {submitting ? 'عم نبعت الطلب...' : 'إرسال الطلب'}
+                {submitting ? 'جارٍ إرسال الطلب...' : 'إرسال الطلب'}
               </button>
             </section>
           </form>

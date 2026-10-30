@@ -20,35 +20,35 @@ const ACTION_LABELS = {
 // Ready-to-copy messages for the customer, in Arabic (FR-16d).
 function customerMessage(order, rate, transferDetails) {
   const link = `${window.location.origin}/track/${order.code}`
-  const hello = `أهلين ${order.customer_name} 🤍`
+  const hello = `أهلاً ${order.customer_name} 🤍`
   const hasFavors = order.items.some(item => item.product_kind === 'favor')
   const deposit = order.deposit_required ? ` بقيمة ${priceText(order.deposit_required, rate)}` : ''
-  const howToPay = transferDetails ? `\nمعلومات التحويل:\n${transferDetails}` : '\nرح نبعتلك تفاصيل التحويل.'
+  const howToPay = transferDetails ? `\nمعلومات التحويل:\n${transferDetails}` : '\nسنرسل لك تفاصيل التحويل قريباً.'
   switch (order.status) {
     case 'approved':
-      return `${hello}\nتم قبول طلبك من Deniz Studio (رقم ${order.code}).${
-        hasFavors || order.deposit_required ? `\nلتثبيت الطلب منحتاج عربون${deposit}.${howToPay}` : ''
-      }\nفيكِ تتابعي طلبك من هون: ${link}`
+      return `${hello}\nتمت الموافقة على طلبك من Deniz Studio (رقم ${order.code}).${
+        hasFavors || order.deposit_required ? `\nلتثبيت الطلب يُرجى دفع عربون${deposit}.${howToPay}` : ''
+      }\nيمكنك متابعة طلبك عبر الرابط: ${link}`
     case 'awaiting_deposit':
-      return `${hello}\nطلبك رقم ${order.code} مقبول 🎉 لتثبيته منحتاج عربون${deposit}.${howToPay}\n${link}`
+      return `${hello}\nتمت الموافقة على طلبك رقم ${order.code} 🎉 ولتثبيته يُرجى دفع عربون${deposit}.${howToPay}\n${link}`
     case 'changes_proposed':
       return `${hello}\nبخصوص طلبك رقم ${order.code}: ${order.admin_message}${
         order.proposed_event_date ? `\nالتاريخ المقترح: ${formatDate(order.proposed_event_date)}` : ''
-      }\nفيكِ توافقي أو ترفضي التعديل من هون: ${link}`
+      }\nيمكنك الموافقة على التعديل أو رفضه عبر الرابط: ${link}`
     case 'rejected':
-      return `${hello}\nللأسف ما منقدر ناخد طلبك رقم ${order.code}: ${order.admin_message}\nمنتمنى نخدمك بمناسبة تانية 🤍`
+      return `${hello}\nنعتذر، تعذّر قبول طلبك رقم ${order.code}: ${order.admin_message}\nنتطلع لخدمتك في مناسبة قادمة 🤍`
     case 'confirmed':
-      return `${hello}\nتم تأكيد طلبك رقم ${order.code} ✨ رح نبلّش التحضير قريباً.\n${link}`
+      return `${hello}\nتم تأكيد طلبك رقم ${order.code} ✨ وسنبدأ التحضير قريباً.\n${link}`
     case 'in_progress':
-      return `${hello}\nبلّشنا تحضير طلبك رقم ${order.code} 🕯️\n${link}`
+      return `${hello}\nبدأنا تحضير طلبك رقم ${order.code} 🕯️\n${link}`
     case 'ready':
-      return `${hello}\nطلبك رقم ${order.code} جاهز 🎀 رح نتواصل معك للتسليم.\n${link}`
+      return `${hello}\nطلبك رقم ${order.code} جاهز 🎀 وسنتواصل معك لترتيب التسليم.\n${link}`
     case 'delivered':
-      return `${hello}\nشكراً لإنك اخترتِ Deniz Studio 🤍 منتمنى تكون مناسبتك حلوة.`
+      return `${hello}\nشكراً لاختيارك Deniz Studio 🤍 نتمنى لك مناسبة سعيدة.`
     case 'cancelled':
-      return `${hello}\nتم إلغاء طلبك رقم ${order.code}. إذا حابة تطلبي من جديد نحنا بالخدمة 🤍`
+      return `${hello}\nتم إلغاء طلبك رقم ${order.code}. يسعدنا استقبال طلبك مجدداً في أي وقت 🤍`
     default:
-      return `${hello}\nطلبك رقم ${order.code} وصلنا وعم نراجعه. فيكِ تتابعيه من هون: ${link}`
+      return `${hello}\nتم استلام طلبك رقم ${order.code} وهو قيد المراجعة. يمكنك متابعته عبر الرابط: ${link}`
   }
 }
 

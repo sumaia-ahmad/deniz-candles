@@ -66,7 +66,7 @@ function App() {
             <p className="hero__brand" dir="ltr">Deniz</p>
             <p className="hero__slogan" dir="ltr">Light it. Feel it. Love it. ✨</p>
             <h1 className="hero__title">
-              شموع بتحكي
+              شموع تحكي
               <span className="hero__highlight"> قصة مناسبتك</span>
             </h1>
             <p className="hero__tagline">شموع معطّرة مصنوعة يدوياً</p>
@@ -126,9 +126,9 @@ function App() {
             ))}
           </div>
 
-          {status === 'loading' && <p className="status">عم نحمّل القطع...</p>}
+          {status === 'loading' && <p className="status">جارٍ تحميل القطع...</p>}
           {status === 'error' && (
-            <p className="status">صار في مشكلة بتحميل القطع، جربي بعد شوي 🙏</p>
+            <p className="status">تعذّر تحميل القطع، يرجى المحاولة لاحقاً.</p>
           )}
 
           <ul className="products">
@@ -169,7 +169,7 @@ function App() {
         <div className="container story__inner">
           <h2 className="section__title" dir="ltr">The Heart of <span>Deniz</span></h2>
           <p className="story__text">
-            كل شمعة بتنعمل بالإيد بكل حب، واهتمام بأدق التفاصيل
+            كل شمعة تُصنع يدوياً بكل حب، مع اهتمام بأدق التفاصيل
           </p>
         </div>
       </section>
@@ -180,7 +180,7 @@ function App() {
           <p className="footer__slogan" dir="ltr">Light it. Feel it. Love it. ✨</p>
           <p>صُنع بحب في دمشق</p>
           <a href={instagramUrl} target="_blank" rel="noreferrer" className="footer__insta">
-            للطلب راسلينا على إنستغرام
+            للطلب، راسلينا عبر إنستغرام
           </a>
           <p className="footer__small">© 2026 Deniz Studio</p>
         </div>

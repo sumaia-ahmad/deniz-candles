@@ -25,7 +25,7 @@ export async function fetchZones() {
 async function readJson(response) {
   const data = await response.json().catch(() => null)
   if (!response.ok) {
-    const error = new Error(data?.error || 'صار في مشكلة، جربي مرة تانية')
+    const error = new Error(data?.error || 'حدث خطأ، يرجى المحاولة مجدداً.')
     error.status = response.status
     throw error
   }

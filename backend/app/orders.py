@@ -76,7 +76,7 @@ def check_rate_limit():
     while history and now - history[0] > RATE_WINDOW_SECONDS:
         history.popleft()
     if len(history) >= RATE_LIMIT:
-        raise OrderError("وصلنا طلبات كتير من نفس الجهاز. جربي بعد شوي 🙏")
+        raise OrderError("تم استلام عدد كبير من الطلبات من الجهاز نفسه. يرجى المحاولة لاحقاً.")
     history.append(now)
 
 
@@ -94,7 +94,7 @@ def save_reference_image(file_storage):
     try:
         return save_image(file_storage, upload_folder(), MAX_IMAGE_SIDE)
     except NotAnImage:
-        raise OrderError("الملف المرفوع لازم يكون صورة (JPG أو PNG)") from None
+        raise OrderError("يجب أن يكون الملف المرفوع صورة (JPG أو PNG)") from None
 
 
 def clean_phone(value):
@@ -269,9 +269,9 @@ def create_order():
 
     raw_items = data.get("items") or []
     if not isinstance(raw_items, list) or not raw_items:
-        raise OrderError("اختاري قطعة وحدة على الأقل")
+        raise OrderError("يرجى اختيار قطعة واحدة على الأقل")
     if len(raw_items) > MAX_ITEMS:
-        raise OrderError(f"الحد الأقصى {MAX_ITEMS} قطعة بالطلب الواحد")
+        raise OrderError(f"الحد الأقصى {MAX_ITEMS} قطعة في الطلب الواحد")
 
     items = []
     longest_lead = 0
@@ -279,13 +279,13 @@ def create_order():
         size = db.session.get(ProductSize, raw.get("size_id"))
         product = db.session.get(Product, raw.get("product_id"))
         if product is None or not product.is_visible or size is None or size.product_id != product.id:
-            raise OrderError("في قطعة بالطلب ما عادت متوفرة")
+            raise OrderError("إحدى القطع في الطلب لم تعد متوفرة")
         try:
             quantity = int(raw.get("quantity"))
         except (TypeError, ValueError):
-            raise OrderError("العدد لازم يكون رقم") from None
+            raise OrderError("يجب أن يكون العدد رقماً") from None
         if not 1 <= quantity <= 2000:
-            raise OrderError("العدد لازم يكون بين 1 و 2000")
+            raise OrderError("يجب أن يكون العدد بين 1 و 2000")
 
         longest_lead = max(longest_lead, size.min_lead_days)
         items.append(
@@ -304,19 +304,19 @@ def create_order():
 
     earliest = date.today() + timedelta(days=longest_lead)
     if event_date < earliest:
-        raise OrderError(f"أقرب تاريخ ممكن لهالطلب هو {earliest.isoformat()}")
+        raise OrderError(f"أقرب تاريخ متاح لهذا الطلب هو {earliest.isoformat()}")
 
     method = data.get("delivery_method")
     zone_name, governorate, fee = None, None, Decimal("0")
     if method == "damascus":
         zone = db.session.get(DeliveryZone, data.get("zone_id"))
         if zone is None or not zone.is_active:
-            raise OrderError("اختاري منطقة التوصيل")
+            raise OrderError("يرجى اختيار منطقة التوصيل")
         zone_name, fee = zone.name_ar, zone.fee  # fee snapshot (BR-1)
     elif method == "governorate":
         governorate = required_text(data.get("governorate"), "المحافظة مطلوبة", 60)
     else:
-        raise OrderError("اختاري طريقة الاستلام")
+        raise OrderError("يرجى اختيار طريقة الاستلام")
 
     image_name = save_reference_image(request.files.get("reference_image")) or ""  # optional
 
@@ -361,17 +361,17 @@ def report_payment(code):
     if order is None:
         abort(404)
     if order.status not in PAYABLE_STATUSES:
-        raise OrderError("ما فيكِ ترسلي دفعة على هالطلب حالياً")
+        raise OrderError("لا يمكن إرسال دفعة لهذا الطلب حالياً")
     if request.form.get("website"):  # honeypot, as on the order form
         raise OrderError("تعذّر إرسال الإشعار")
     if sum(1 for p in order.payments if p.status == "reported") >= MAX_OPEN_REPORTS:
-        raise OrderError("عنا إشعارات لسا ما تأكدنا منها. استني شوي لنراجعها 🙏")
+        raise OrderError("لديك إشعارات قيد التحقق، يرجى الانتظار حتى تتم مراجعتها.")
     check_rate_limit()
 
     try:
         amount = Decimal((request.form.get("amount") or "").strip())
     except Exception:
-        raise OrderError("اكتبي المبلغ اللي حوّلتيه") from None
+        raise OrderError("يرجى إدخال المبلغ المحوَّل") from None
     if amount <= 0 or amount.as_tuple().exponent < -2:
         raise OrderError("المبلغ غير صحيح")
 
@@ -381,7 +381,7 @@ def report_payment(code):
     try:
         receipt_name = save_image(receipt, uploads_dir("receipts"), MAX_IMAGE_SIDE)
     except NotAnImage:
-        raise OrderError("الملف لازم يكون صورة (JPG أو PNG)") from None
+        raise OrderError("يجب أن يكون الملف صورة (JPG أو PNG)") from None
 
     order.payments.append(
         Payment(
@@ -405,7 +405,7 @@ def respond_to_changes(code):
     if order is None:
         abort(404)
     if order.status != "changes_proposed":
-        raise OrderError("ما في تعديل مقترح على هالطلب")
+        raise OrderError("لا يوجد تعديل مقترح على هذا الطلب")
 
     accept = bool((request.get_json(silent=True) or {}).get("accept"))
     if accept:
