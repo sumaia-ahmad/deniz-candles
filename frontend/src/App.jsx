@@ -51,7 +51,6 @@ function App() {
           <nav className="nav">
             <a href="#favors">توزيعات</a>
             <a href="#gifts">هدايا</a>
-            <a href="#story">قصتنا</a>
             <Link to="/track">تتبّع طلبك</Link>
             <Link to="/order" className="nav__cta">
               اطلبي الآن
