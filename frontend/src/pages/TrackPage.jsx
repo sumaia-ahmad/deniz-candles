@@ -62,9 +62,12 @@ function ReportPayment({ order, suggestedAmount, onReported }) {
   if (!order.can_report_payment) return null
   if (!open) {
     return (
-      <button type="button" className="btn btn--primary report-button" onClick={() => setOpen(true)}>
-        حوّلتِ؟ ارفعي صورة الإشعار
-      </button>
+      <div className="report-cta">
+        <p>يرجى إرفاق صورة الإشعار عند إتمام عملية التحويل.</p>
+        <button type="button" className="btn btn--primary" onClick={() => setOpen(true)}>
+          إرفاق صورة الإشعار
+        </button>
+      </div>
     )
   }
 
@@ -89,7 +92,7 @@ function ReportPayment({ order, suggestedAmount, onReported }) {
   return (
     <form className="report-form" onSubmit={submit}>
       <label className="form-field">
-        <span>المبلغ اللي حوّلتيه ($) *</span>
+        <span>المبلغ المحوَّل ($) *</span>
         <input type="text" inputMode="decimal" dir="ltr" value={amount} onChange={e => setAmount(cleanAmount(e.target.value))} required />
       </label>
       <label className="form-field">
@@ -102,7 +105,7 @@ function ReportPayment({ order, suggestedAmount, onReported }) {
       </label>
       {error && <p className="order-error">{error}</p>}
       <div className="proposal__actions">
-        <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'عم نرسل...' : 'إرسال الإشعار'}</button>
+        <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'جارٍ الإرسال...' : 'إرسال الإشعار'}</button>
         <button type="button" className="btn btn--ghost" onClick={() => setOpen(false)}>إلغاء</button>
       </div>
     </form>
@@ -110,9 +113,9 @@ function ReportPayment({ order, suggestedAmount, onReported }) {
 }
 
 const REPORT_STATUS = {
-  reported: { text: 'وصلنا الإشعار، وعم نتأكد منه ⏳', tone: 'wait' },
-  received: { text: 'تأكدنا من الدفعة ✓', tone: 'ok' },
-  rejected: { text: 'ما قدرنا نأكد هالدفعة', tone: 'bad' },
+  reported: { text: 'تم استلام الإشعار، وجارٍ التحقق منه ⏳', tone: 'wait' },
+  received: { text: 'تم تأكيد الدفعة ✓', tone: 'ok' },
+  rejected: { text: 'تعذّر تأكيد هذه الدفعة', tone: 'bad' },
 }
 
 function PaymentReports({ reports }) {

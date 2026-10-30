@@ -440,8 +440,12 @@
   color: var(--color-rose);
 }
 
-.report-button {
+.report-cta {
   margin-top: 12px;
+}
+
+.report-cta p {
+  margin: 0 0 8px;
 }
 
 .report-form {
