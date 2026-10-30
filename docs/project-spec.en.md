@@ -172,7 +172,7 @@ The business currently runs entirely through Instagram, which causes the followi
 | **BR-6** | **Deposit by order type:** **event favor** orders are only confirmed after a deposit is paid by transfer. **Gift** orders (e.g. a candle flower box or a single candle) need no deposit. A piece's type (favor or gift) is **fixed** in the catalog. |
 | **BR-7** | **Payment rules are soft:** if a required deposit or transfer has not been recorded, the system only shows a **warning** when the status changes, and the admin decides. The system **never blocks**. |
 | **BR-8** | **The assistant** cannot see any cost, profit, or report data. |
-| **BR-9** | **Minimum lead time:** favors at least **14 days** before the event. Gifts **3 to 7 days** depending on size; the lead time is set per piece or size. |
+| **BR-9** | **Minimum lead time:** orders of **50 pieces or more** need at least **14 days** (both numbers are editable in Settings). Smaller orders have no such rule; the admin agrees on the date when reviewing them. Each size also keeps its own lead time (e.g. gifts **3 to 7 days** depending on size). |
 | **BR-10** | **Online orders are requests:** an order is not confirmed, and no deposit is requested, until the admin reviews and approves it. |
 
 ---

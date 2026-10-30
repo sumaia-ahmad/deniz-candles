@@ -12,6 +12,7 @@ from .auth import admin_required, login_required
 from .extensions import db
 from .images import NotAnImage, save_image, uploads_dir
 from .models import Customer, DeliveryZone, Order, OrderItem, Payment, Product, ProductSize, utcnow
+from .settings import large_order_rule
 
 public_bp = Blueprint("orders", __name__, url_prefix="/api/orders")
 admin_bp = Blueprint("admin_orders", __name__, url_prefix="/api/admin/orders")
@@ -301,6 +302,11 @@ def create_order():
                 custom_text=required_text(raw.get("custom_text"), "الاسم أو العبارة مطلوبة لكل قطعة", 200),
             )
         )
+
+    # Big orders need more time (BR-9); smaller ones only follow each piece's own preparation time.
+    large_pieces, large_days = large_order_rule()
+    if sum(item.quantity for item in items) >= large_pieces:
+        longest_lead = max(longest_lead, large_days)
 
     earliest = date.today() + timedelta(days=longest_lead)
     if event_date < earliest:

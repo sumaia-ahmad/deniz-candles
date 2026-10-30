@@ -20,10 +20,10 @@ def png_bytes():
 
 @pytest.fixture
 def catalog(app):
-    """One favor (14-day lead, priced) and one gift (3-day lead, priced), plus a Damascus zone."""
+    """One favor (no lead time of its own, priced) and one gift (3-day lead, priced), plus a Damascus zone."""
     with app.app_context():
         favor = Product(kind="favor", name_ar="شمعة تخرج")
-        favor.sizes.append(ProductSize(name_ar="قياسي", price=2, min_lead_days=14))
+        favor.sizes.append(ProductSize(name_ar="قياسي", price=2, min_lead_days=0))
         db.session.add(favor)
         zone = DeliveryZone(name_ar="المزة", fee=3)
         db.session.add(zone)
@@ -82,10 +82,29 @@ def test_price_snapshot_is_kept_when_catalog_price_changes(app, client, catalog)
     assert client.get(f"/api/orders/{code}").get_json()["items_total"] == "50.00"
 
 
-def test_favor_needs_14_days_notice(client, catalog):
-    too_soon = place(client, order_payload(catalog, kind="favor", days_ahead=10))
-    assert too_soon.status_code == 400
-    assert place(client, order_payload(catalog, kind="favor", days_ahead=14)).status_code == 201
+def large_favor_order(catalog, quantity, days_ahead):
+    payload = order_payload(catalog, kind="favor", days_ahead=days_ahead)
+    payload["items"][0]["quantity"] = quantity
+    return payload
+
+
+def test_orders_of_50_pieces_or_more_need_14_days(client, catalog):
+    assert place(client, large_favor_order(catalog, 50, days_ahead=13)).status_code == 400
+    assert place(client, large_favor_order(catalog, 50, days_ahead=14)).status_code == 201
+
+
+def test_smaller_favor_orders_have_no_14_day_rule(client, catalog):
+    assert place(client, large_favor_order(catalog, 49, days_ahead=2)).status_code == 201
+
+
+def test_large_order_rule_can_be_changed(client, catalog):
+    from .conftest import login
+
+    login(client)
+    client.put("/api/admin/settings", json={"large_order_pieces": 30, "large_order_days": 20})
+    client.post("/api/auth/logout")
+    assert place(client, large_favor_order(catalog, 30, days_ahead=19)).status_code == 400
+    assert place(client, large_favor_order(catalog, 29, days_ahead=2)).status_code == 201
 
 
 def test_gift_needs_3_days_notice(client, catalog):

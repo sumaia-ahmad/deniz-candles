@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { forgetRate } from '../currency'
-import { cleanAmount } from '../numberInput'
+import { cleanAmount, cleanWholeNumber } from '../numberInput'
 import { formatDate } from '../orderStatus'
 import { adminApi } from './adminApi'
 
@@ -8,6 +8,8 @@ function SettingsPage({ onSessionEnded }) {
   const [settings, setSettings] = useState(null)
   const [rate, setRate] = useState('')
   const [transfer, setTransfer] = useState('')
+  const [largePieces, setLargePieces] = useState('')
+  const [largeDays, setLargeDays] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -19,6 +21,8 @@ function SettingsPage({ onSessionEnded }) {
         setSettings(data)
         setRate(data.usd_to_syp ?? '')
         setTransfer(data.transfer_details ?? '')
+        setLargePieces(String(data.large_order_pieces))
+        setLargeDays(String(data.large_order_days))
       })
       .catch(err => (err.status === 401 ? onSessionEnded() : setError(err.message)))
   }, [onSessionEnded])
@@ -28,7 +32,12 @@ function SettingsPage({ onSessionEnded }) {
     setSaving(true)
     setError('')
     try {
-      const data = await adminApi.updateSettings({ usd_to_syp: rate, transfer_details: transfer })
+      const data = await adminApi.updateSettings({
+        usd_to_syp: rate,
+        transfer_details: transfer,
+        large_order_pieces: largePieces,
+        large_order_days: largeDays,
+      })
       setSettings(data)
       setRate(data.usd_to_syp ?? '')
       setTransfer(data.transfer_details ?? '')
@@ -81,6 +90,37 @@ function SettingsPage({ onSessionEnded }) {
         {settings.usd_to_syp_updated_at && (
           <p className="page-head__hint">Last updated {formatDate(settings.usd_to_syp_updated_at, 'en-GB')}</p>
         )}
+
+        <h3 className="card-title settings-card__section">Large orders</h3>
+        <p className="page-head__hint">
+          Orders with many pieces need more preparation time. Smaller orders only follow each size's own "Min. days",
+          and you agree on the delivery date when you review them.
+        </p>
+        <div className="large-order-row">
+          <span>Orders of</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={largePieces}
+            onChange={e => {
+              setLargePieces(cleanWholeNumber(e.target.value, 6))
+              setSaved(false)
+            }}
+            aria-label="Pieces"
+          />
+          <span>pieces or more need at least</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={largeDays}
+            onChange={e => {
+              setLargeDays(cleanWholeNumber(e.target.value, 3))
+              setSaved(false)
+            }}
+            aria-label="Days"
+          />
+          <span>days.</span>
+        </div>
 
         <h3 className="card-title settings-card__section">Transfer details</h3>
         <p className="page-head__hint">

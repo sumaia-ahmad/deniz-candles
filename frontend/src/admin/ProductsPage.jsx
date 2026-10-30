@@ -149,7 +149,7 @@ function PhotoStrip({ product, onChange, onError }) {
 }
 
 function NewProductForm({ occasions, onCreated, onCancel, onError }) {
-  const [form, setForm] = useState({ kind: 'favor', occasion: '', name_ar: '', size_name: 'قياسي', price: '', min_lead_days: '14' })
+  const [form, setForm] = useState({ kind: 'favor', occasion: '', name_ar: '', size_name: 'قياسي', price: '', min_lead_days: '0' })
   const [photos, setPhotos] = useState([])
   const [saving, setSaving] = useState(false)
 
@@ -158,8 +158,8 @@ function NewProductForm({ occasions, onCreated, onCancel, onError }) {
   }
 
   function chooseKind(kind) {
-    // Favors need 14 days and an occasion; gifts start at 3 days (BR-9).
-    setForm(f => ({ ...f, kind, min_lead_days: kind === 'favor' ? '14' : '3' }))
+    // Favors need an occasion; big orders get their time from the large-order rule in Settings (BR-9).
+    setForm(f => ({ ...f, kind, min_lead_days: kind === 'favor' ? '0' : '3' }))
   }
 
   async function submit(event) {
@@ -405,7 +405,7 @@ function ProductsPage({ onSessionEnded }) {
           <h1>Products & Prices</h1>
           <p className="page-head__hint">
             Prices are in US dollars, per size. "Min. days" is the shortest time allowed between the order and
-            the event.
+            the event for that size. Large orders also follow the rule in Settings.
             {withoutPrice > 0 && <strong> {withoutPrice} products still have no price.</strong>}
           </p>
         </div>

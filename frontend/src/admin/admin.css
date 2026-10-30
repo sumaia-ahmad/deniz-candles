@@ -794,3 +794,14 @@
 .tag--gap {
   margin-inline-start: 6px;
 }
+
+.large-order-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin .large-order-row input {
+  width: 72px;
+}

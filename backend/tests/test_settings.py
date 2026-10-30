@@ -23,3 +23,10 @@ def test_transfer_details_are_shown_to_customers(admin_client, client):
 
     admin_client.put("/api/admin/settings", json={"transfer_details": ""})
     assert client.get("/api/settings").get_json()["transfer_details"] is None
+
+
+def test_large_order_rule_defaults_and_validation(admin_client):
+    settings = admin_client.get("/api/settings").get_json()
+    assert (settings["large_order_pieces"], settings["large_order_days"]) == (50, 14)
+    assert admin_client.put("/api/admin/settings", json={"large_order_pieces": "abc"}).status_code == 400
+    assert admin_client.put("/api/admin/settings", json={"large_order_days": 400}).status_code == 400

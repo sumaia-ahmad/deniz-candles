@@ -10,6 +10,20 @@ bp = Blueprint("settings", __name__, url_prefix="/api")
 
 USD_TO_SYP = "usd_to_syp"  # how many Syrian pounds one US dollar is worth
 TRANSFER_DETAILS = "transfer_details"  # where customers send deposits and payments (shown to them)
+# Large orders need more preparation time (BR-9): from LARGE_ORDER_PIECES pieces, at least LARGE_ORDER_DAYS days.
+LARGE_ORDER_PIECES = "large_order_pieces"
+LARGE_ORDER_DAYS = "large_order_days"
+DEFAULTS = {LARGE_ORDER_PIECES: 50, LARGE_ORDER_DAYS: 14}
+
+
+def int_setting(key):
+    setting = db.session.get(Setting, key)
+    return int(setting.value) if setting else DEFAULTS[key]
+
+
+def large_order_rule():
+    """(pieces, days): orders with at least `pieces` pieces need at least `days` days before the event."""
+    return int_setting(LARGE_ORDER_PIECES), int_setting(LARGE_ORDER_DAYS)
 
 
 def settings_dict():
@@ -19,6 +33,8 @@ def settings_dict():
         "usd_to_syp": rate.value if rate else None,
         "usd_to_syp_updated_at": rate.updated_at.isoformat() if rate else None,
         "transfer_details": transfer.value if transfer else None,
+        "large_order_pieces": int_setting(LARGE_ORDER_PIECES),
+        "large_order_days": int_setting(LARGE_ORDER_DAYS),
     }
 
 
@@ -63,6 +79,18 @@ def update_settings():
             text = f"{rate:f}"
             setting.value = text.rstrip("0").rstrip(".") if "." in text else text  # "13000", "13000.5"
             db.session.add(setting)
+    for key, low, high in ((LARGE_ORDER_PIECES, 1, 100_000), (LARGE_ORDER_DAYS, 0, 365)):
+        if key in data:
+            try:
+                number = int(str(data[key]).strip())
+            except ValueError:
+                return jsonify(error="Large-order values must be whole numbers."), 400
+            if not low <= number <= high:
+                return jsonify(error=f"Enter a number between {low} and {high}."), 400
+            setting = db.session.get(Setting, key) or Setting(key=key)
+            setting.value = str(number)
+            db.session.add(setting)
+
     if "transfer_details" in data:
         try:
             save_text_setting(TRANSFER_DETAILS, data["transfer_details"], 200)

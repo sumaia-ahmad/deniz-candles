@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { fetchCatalog, fetchZones, placeOrder } from '../api'
 import PageHeader from '../components/PageHeader'
 import Price from '../components/Price'
-import { priceText, useSypRate } from '../currency'
+import { priceText, useSiteSettings, useSypRate } from '../currency'
 import { cleanWholeNumber } from '../numberInput'
 import { formatDate, formatMoney } from '../orderStatus'
 import '../order.css'
@@ -19,7 +19,7 @@ function newItem(product) {
     key: nextKey++,
     product_id: product ? product.id : '',
     size_id: product ? product.sizes[0].id : '',
-    quantity: product?.kind === 'favor' ? 20 : 1,
+    quantity: '', // the customer types the quantity herself
     colors: '',
     custom_text: '',
   }
@@ -123,7 +123,12 @@ function ItemRow({ item, products, index, canRemove, onChange, onRemove }) {
         <p className="order-item__price">
           {size.price ? (
             <>
-              {formatMoney(size.price)} للقطعة · <Price usd={size.price * (Number(item.quantity) || 0)} />
+              {formatMoney(size.price)} للقطعة
+              {Number(item.quantity) > 0 && (
+                <>
+                  {' '}· <Price usd={size.price * Number(item.quantity)} />
+                </>
+              )}
             </>
           ) : (
             'يُحدَّد السعر بعد مراجعة الطلب'
@@ -174,7 +179,13 @@ function OrderPage() {
     .filter(Boolean)
 
   // Earliest allowed event date: the longest preparation time among the chosen pieces (BR-9).
-  const leadDays = Math.max(0, ...chosenSizes.map(s => s.min_lead_days))
+  // Earliest event date (BR-9): each piece's own preparation time, and big orders need more time.
+  const settings = useSiteSettings()
+  const largePieces = settings.large_order_pieces ?? 50
+  const largeDays = settings.large_order_days ?? 14
+  const totalPieces = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+  const isLargeOrder = totalPieces >= largePieces
+  const leadDays = Math.max(0, ...chosenSizes.map(s => s.min_lead_days), isLargeOrder ? largeDays : 0)
   const minDate = addDays(leadDays)
 
   const zone = zones.find(z => z.id === Number(form.zone_id))
@@ -262,12 +273,24 @@ function OrderPage() {
                 <label className="form-field">
                   <span>تاريخ المناسبة *</span>
                   <input type="date" min={minDate} value={form.event_date} onChange={e => update('event_date', e.target.value)} required />
-                  {leadDays > 0 && (
-                    <small className="date-hint">
-                      أقرب تاريخ متاح: <strong>{formatDate(minDate)}</strong>، إذ يحتاج هذا الطلب إلى {leadDays}{' '}
-                      {leadDays <= 10 ? 'أيام' : 'يوماً'} على الأقل للتحضير.
-                    </small>
-                  )}
+                  <small className="date-hint">
+                    {isLargeOrder && leadDays === largeDays ? (
+                      <>
+                        أقرب تاريخ متاح: <strong>{formatDate(minDate)}</strong>، إذ تحتاج الطلبات من {largePieces} قطعة
+                        فأكثر إلى {largeDays} يوماً على الأقل للتحضير.
+                      </>
+                    ) : leadDays > 0 ? (
+                      <>
+                        أقرب تاريخ متاح: <strong>{formatDate(minDate)}</strong>، إذ يحتاج هذا الطلب إلى {leadDays}{' '}
+                        {leadDays <= 10 ? 'أيام' : 'يوماً'} على الأقل للتحضير.
+                      </>
+                    ) : (
+                      <>
+                        سنراجع طلبك ونؤكد معك موعد التسليم المناسب. (الطلبات من {largePieces} قطعة فأكثر تحتاج إلى{' '}
+                        {largeDays} يوماً على الأقل.)
+                      </>
+                    )}
+                  </small>
                 </label>
               </div>
             </section>

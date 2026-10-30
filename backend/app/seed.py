@@ -50,7 +50,7 @@ def seed_command():
             occasion=occasions.get(occasion_slug),
             name_ar=name_ar,
         )
-        lead_days = 14 if kind == "favor" else 3  # BR-9 starting values
+        lead_days = 0 if kind == "favor" else 3  # BR-9: favors rely on the large-order rule (50+ pieces -> 14 days)
         product.sizes.append(ProductSize(name_ar="قياسي", price=None, min_lead_days=lead_days))
         for order, name in enumerate(image_names):
             product.images.append(ProductImage(filename=f"{name}.jpg", sort_order=order))

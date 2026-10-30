@@ -32,14 +32,14 @@ def test_create_gift_with_photos(admin_client):
     assert admin_client.get(public["images"][0]).status_code == 200
 
 
-def test_favor_needs_an_occasion_and_gets_14_days(app, admin_client):
+def test_favor_needs_an_occasion_and_has_no_lead_time_of_its_own(app, admin_client):
     assert create(admin_client, kind="favor").status_code == 400
     with app.app_context():
         db.session.add(Occasion(slug="baby", name_ar="توزيعات بيبي", name_en="Baby favors"))
         db.session.commit()
     product = create(admin_client, kind="favor", occasion="baby").get_json()
     assert product["occasion"] == "baby"
-    assert product["sizes"][0]["min_lead_days"] == 14
+    assert product["sizes"][0]["min_lead_days"] == 0  # the 50+ pieces rule covers big favor orders
 
 
 def test_product_needs_a_photo_and_real_images(admin_client):

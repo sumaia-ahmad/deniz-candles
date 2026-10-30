@@ -131,7 +131,7 @@ def create_product():
         ProductSize(
             name_ar=clean_name(form.get("size_name") or "قياسي", "Size name"),
             price=clean_money(form.get("price"), "Price", allow_empty=True),
-            min_lead_days=clean_days(form.get("min_lead_days") or (14 if kind == "favor" else 3)),
+            min_lead_days=clean_days(form.get("min_lead_days") or (0 if kind == "favor" else 3)),
         )
     )
     if add_uploaded_photos(product, request.files.getlist("photos")) == 0:
@@ -227,7 +227,7 @@ def add_size(product_id):
     size = ProductSize(
         name_ar=clean_name(data.get("name_ar"), "Size name"),
         price=clean_money(data.get("price"), "Price", allow_empty=True),
-        min_lead_days=clean_days(data.get("min_lead_days", 14 if product.kind == "favor" else 3)),
+        min_lead_days=clean_days(data.get("min_lead_days", 0 if product.kind == "favor" else 3)),
     )
     product.sizes.append(size)
     db.session.commit()
