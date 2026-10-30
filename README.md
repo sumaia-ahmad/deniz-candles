@@ -33,6 +33,12 @@ customers kept asking about their orders, and there was no clear view of payment
 - Soft business rules: confirming without the deposit or shipping an unpaid order shows a warning instead of
   blocking, so the owner keeps the final say
 - Catalog management: new products, sizes, prices, preparation times, photos (cover, add, delete), visibility
+- Inventory of raw materials with a stock ledger (every change is recorded with its reason), manual
+  adjustments and low-stock alerts in the menu
+- Purchases that add stock and keep a weighted average cost per material
+- Recipes per size (what one piece is made of), giving the material cost and margin of every piece
+- Starting to prepare an order takes its materials out of stock (with a warning if stock is short); cancelling
+  puts them back
 - Delivery zones, exchange rate and transfer details settings
 - Admin and assistant roles; the assistant handles orders but cannot manage the catalog, prices, payments or settings
 
@@ -43,7 +49,7 @@ flowchart LR
     Customer([Customer browser]) -->|/ /order /track| React
     Owner([Owner browser]) -->|/admin| React
     React[React SPA<br/>Vite + React Router] -->|JSON over /api| Flask
-    Flask[Flask API<br/>blueprints: catalog, orders,<br/>admin, auth, settings] --> DB[(SQLite / PostgreSQL<br/>SQLAlchemy + Alembic)]
+    Flask[Flask API<br/>blueprints: catalog, orders,<br/>admin, auth, settings, inventory] --> DB[(SQLite / PostgreSQL<br/>SQLAlchemy + Alembic)]
     Flask --> Files[(Uploaded photos<br/>and receipts)]
 ```
 
@@ -62,6 +68,8 @@ flowchart LR
 - **Untrusted uploads are re-encoded:** images are verified, resized and re-saved as JPEG (which also strips
   metadata such as location), and receipts and reference images are only served to signed-in users.
 - **Spam protection** on public forms with a honeypot field and a per-address rate limit.
+- **Stock as a ledger:** quantities only change through recorded movements (purchase, order, return,
+  adjustment), so every number can be traced back, and an order's materials are consumed exactly once.
 - **Requirements first:** the [project specification](docs/project-spec.en.md) lists numbered functional
   requirements (FR-x) and business rules (BR-x) that the code and tests refer to.
 
@@ -73,7 +81,7 @@ flowchart LR
 | Backend | Python 3.13, Flask, Flask-SQLAlchemy, Flask-Migrate (Alembic), Pillow |
 | Database | SQLite in development, PostgreSQL in Docker |
 | Deployment | Docker Compose: PostgreSQL, Flask on Gunicorn, Nginx serving the React build |
-| Quality | pytest (71 tests), GitHub Actions CI (tests, migration checks, lint, build, full Docker stack smoke test) |
+| Quality | pytest (80 tests), GitHub Actions CI (tests, migration checks, lint, build, full Docker stack smoke test) |
 
 ## Running it locally
 
@@ -122,7 +130,7 @@ cd backend && source .venv/bin/activate && python -m pytest
 ```
 
 The suite covers ordering rules (lead times, required fields, price snapshots, spam protection), the review
-workflow, payments and deposits, permissions, uploads and settings. CI runs it on every push, checks that the
+workflow, payments and deposits, inventory and costing, permissions, uploads and settings. CI runs it on every push, checks that the
 migrations build a fresh database matching the models, and starts the full Docker stack on PostgreSQL to test
 it end to end through Nginx.
 
@@ -130,7 +138,7 @@ it end to end through Nginx.
 
 ```
 backend/
-  app/            Flask app: catalog, orders, admin, auth, settings, images, models
+  app/            Flask app: catalog, orders, admin, auth, settings, inventory, images, models
   migrations/     Alembic migrations
   tests/          pytest suite
   Dockerfile      API image (Gunicorn)
@@ -147,9 +155,8 @@ start.command     one-click local start on macOS
 
 - Deploy online
 - Order calendar and customer history pages
-- Raw materials with low-stock alerts, cost recipes and profit per piece
 - Quote and invoice PDFs
-- Expenses and monthly reports
+- Expenses and monthly reports (sales, profit, top products)
 - English version of the storefront
 - Generating an order from a customer's Instagram message with an LLM
 

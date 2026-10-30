@@ -11,6 +11,7 @@ from flask import Blueprint, abort, current_app, jsonify, request, send_from_dir
 from .auth import admin_required, login_required
 from .extensions import db
 from .images import NotAnImage, save_image, uploads_dir
+from .inventory import consume_order_materials, return_order_materials, stock_warnings
 from .models import Customer, DeliveryZone, Order, OrderItem, Payment, Product, ProductSize, utcnow
 from .settings import large_order_rule
 
@@ -466,6 +467,8 @@ def change_status(order_id):
         raise OrderError(f"Cannot move an order from '{order.status}' to '{new_status}'.")
 
     warnings = payment_warnings(order, new_status)
+    if new_status == "in_progress":
+        warnings += stock_warnings(order)
     if warnings and not data.get("confirm"):
         # Ask the dashboard to confirm; sending again with "confirm": true goes ahead.
         return jsonify(warnings=warnings), 409
@@ -489,6 +492,11 @@ def change_status(order_id):
         order.admin_message = message
 
     order.status = new_status
+    # Preparation uses up materials; cancelling an order in preparation gives them back.
+    if new_status == "in_progress":
+        consume_order_materials(order)
+    elif new_status == "cancelled":
+        return_order_materials(order)
     db.session.commit()
     return order_detail(order)
 

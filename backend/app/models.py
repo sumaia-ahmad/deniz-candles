@@ -52,6 +52,14 @@ class ProductSize(db.Model):
     min_lead_days = db.Column(db.Integer, nullable=False, default=14)
 
     product = db.relationship("Product", back_populates="sizes")
+    recipe = db.relationship("RecipeItem", back_populates="size", cascade="all, delete-orphan")
+
+    @property
+    def unit_cost(self):
+        """Material cost of one piece from its recipe, or None if the recipe or a material cost is missing."""
+        if not self.recipe or any(item.material.average_unit_cost is None for item in self.recipe):
+            return None
+        return sum((item.quantity * item.material.average_unit_cost for item in self.recipe), Decimal("0"))
 
 
 class ProductImage(db.Model):
@@ -156,6 +164,9 @@ class Order(db.Model):
     admin_message = db.Column(db.Text, nullable=True)
     proposed_event_date = db.Column(db.Date, nullable=True)
 
+    # True once the order's materials were taken out of stock (when preparation starts).
+    materials_consumed = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
     updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
 
@@ -257,3 +268,93 @@ class Setting(db.Model):
     key = db.Column(db.String(50), primary_key=True)
     value = db.Column(db.String(200), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
+
+
+class Material(db.Model):
+    """A raw material kept in stock (wax, boxes, ribbon...)."""
+
+    __tablename__ = "materials"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    unit = db.Column(db.String(20), nullable=False)  # e.g. g, ml, piece, cm
+    # Cached running balance; every change also writes a StockMovement (the ledger).
+    quantity = db.Column(db.Numeric(12, 3), nullable=False, default=0)
+    low_stock_threshold = db.Column(db.Numeric(12, 3), nullable=True)
+    # Weighted average cost of one unit, updated with every purchase.
+    average_unit_cost = db.Column(db.Numeric(12, 4), nullable=True)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+    movements = db.relationship(
+        "StockMovement", back_populates="material", cascade="all, delete-orphan", order_by="StockMovement.created_at.desc()"
+    )
+
+    @property
+    def is_low(self):
+        return self.low_stock_threshold is not None and self.quantity <= self.low_stock_threshold
+
+
+class StockMovement(db.Model):
+    """One change to a material's stock. The sum of a material's movements equals its quantity."""
+
+    __tablename__ = "stock_movements"
+
+    REASONS = ("purchase", "order", "order_return", "adjustment")
+
+    id = db.Column(db.Integer, primary_key=True)
+    material_id = db.Column(db.Integer, db.ForeignKey("materials.id"), nullable=False)
+    change = db.Column(db.Numeric(12, 3), nullable=False)  # + adds stock, - removes it
+    reason = db.Column(db.String(20), nullable=False)
+    purchase_id = db.Column(db.Integer, db.ForeignKey("purchases.id"), nullable=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id"), nullable=True)
+    note = db.Column(db.String(200), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+    material = db.relationship("Material", back_populates="movements")
+
+
+class Purchase(db.Model):
+    """A purchase of materials from a supplier."""
+
+    __tablename__ = "purchases"
+
+    id = db.Column(db.Integer, primary_key=True)
+    purchased_on = db.Column(db.Date, nullable=False)
+    supplier = db.Column(db.String(100), nullable=True)
+    note = db.Column(db.String(300), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+    items = db.relationship("PurchaseItem", back_populates="purchase", cascade="all, delete-orphan")
+
+    @property
+    def total(self):
+        return sum((item.quantity * item.unit_cost for item in self.items), Decimal("0"))
+
+
+class PurchaseItem(db.Model):
+    __tablename__ = "purchase_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    purchase_id = db.Column(db.Integer, db.ForeignKey("purchases.id"), nullable=False)
+    material_id = db.Column(db.Integer, db.ForeignKey("materials.id"), nullable=False)
+    quantity = db.Column(db.Numeric(12, 3), nullable=False)
+    unit_cost = db.Column(db.Numeric(12, 4), nullable=False)  # price paid per unit (snapshot)
+
+    purchase = db.relationship("Purchase", back_populates="items")
+    material = db.relationship("Material")
+
+
+class RecipeItem(db.Model):
+    """How much of a material one piece of a product size uses (bill of materials)."""
+
+    __tablename__ = "recipe_items"
+    __table_args__ = (db.UniqueConstraint("size_id", "material_id", name="uq_recipe_size_material"),)
+
+    id = db.Column(db.Integer, primary_key=True)
+    size_id = db.Column(db.Integer, db.ForeignKey("product_sizes.id"), nullable=False)
+    material_id = db.Column(db.Integer, db.ForeignKey("materials.id"), nullable=False)
+    quantity = db.Column(db.Numeric(12, 3), nullable=False)
+
+    size = db.relationship("ProductSize", back_populates="recipe")
+    material = db.relationship("Material")

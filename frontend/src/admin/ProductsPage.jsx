@@ -1,10 +1,88 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { adminApi } from './adminApi'
 import { cleanAmount, cleanWholeNumber } from '../numberInput'
 
 const KIND_TITLES = { favor: 'Favors', gift: 'Gifts' }
 
-function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
+function CostCell({ size }) {
+  if (size.recipe_count === 0) return <span className="muted">No recipe</span>
+  if (size.unit_cost === null) return <span className="muted" title="Some materials have no cost yet">Cost unknown</span>
+  const cost = Number(size.unit_cost)
+  if (size.price === null) return <span>${size.unit_cost}</span>
+  const profit = Number(size.price) - cost
+  const margin = Number(size.price) > 0 ? Math.round((profit / Number(size.price)) * 100) : 0
+  return (
+    <span title={`Profit per piece: $${profit.toFixed(2)}`}>
+      ${size.unit_cost} · <span className={profit < 0 ? 'warn-text' : 'ok-text'}>{margin}%</span>
+    </span>
+  )
+}
+
+// What one piece of a size is made of; the cost per piece comes from each material's average cost.
+function RecipeEditor({ size, materials, onSaved, onClose, onError }) {
+  const [lines, setLines] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    adminApi
+      .recipe(size.id)
+      .then(recipe => setLines(recipe.items.map(item => ({ material_id: String(item.material_id), quantity: item.quantity }))))
+      .catch(onError)
+  }, [size.id, onError])
+
+  function updateLine(index, field, value) {
+    setLines(lines.map((line, i) => (i === index ? { ...line, [field]: value } : line)))
+  }
+
+  async function save(event) {
+    event.preventDefault()
+    setSaving(true)
+    try {
+      const items = lines.map(line => ({ material_id: Number(line.material_id), quantity: line.quantity }))
+      const recipe = await adminApi.saveRecipe(size.id, items)
+      onSaved({ ...size, unit_cost: recipe.unit_cost, recipe_count: recipe.items.length })
+      onClose()
+    } catch (err) {
+      onError(err)
+      setSaving(false)
+    }
+  }
+
+  if (lines === null) return <p className="muted">Loading recipe...</p>
+  if (materials.length === 0) return <p className="muted">Add your materials in Inventory first, then come back to build the recipe.</p>
+
+  return (
+    <form className="recipe" onSubmit={save}>
+      <p className="muted">One piece of this size uses:</p>
+      {lines.map((line, index) => {
+        const material = materials.find(m => String(m.id) === line.material_id)
+        return (
+          <div key={index} className="recipe__line">
+            <select value={line.material_id} onChange={e => updateLine(index, 'material_id', e.target.value)} required>
+              <option value="">Material...</option>
+              {materials.map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+            <div className="money-input">
+              <input type="text" inputMode="decimal" value={line.quantity} onChange={e => updateLine(index, 'quantity', cleanAmount(e.target.value))} placeholder="Qty" required aria-label="Quantity per piece" />
+              <span>{material?.unit}</span>
+            </div>
+            <button type="button" className="admin-link admin-link--danger" onClick={() => setLines(lines.filter((_, i) => i !== index))}>×</button>
+          </div>
+        )
+      })}
+      <div className="action-buttons">
+        <button type="button" className="admin-link" onClick={() => setLines([...lines, { material_id: '', quantity: '' }])}>+ Material</button>
+        <button type="submit" className="btn-small btn-small--primary" disabled={saving}>{saving ? '...' : 'Save recipe'}</button>
+        <button type="button" className="btn-small" onClick={onClose}>Cancel</button>
+      </div>
+    </form>
+  )
+}
+
+function SizeRow({ size, materials, canDelete, onSaved, onDeleted, onError }) {
+  const [editingRecipe, setEditingRecipe] = useState(false)
   const [draft, setDraft] = useState({
     name_ar: size.name_ar,
     price: size.price ?? '',
@@ -49,6 +127,7 @@ function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
   }
 
   return (
+    <>
     <tr>
       <td>
         <input value={draft.name_ar} onChange={e => update('name_ar', e.target.value)} aria-label="Size name" dir="auto" />
@@ -78,6 +157,12 @@ function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
           className="input-short"
         />
       </td>
+      <td className="row-cost">
+        <CostCell size={size} />
+        <button type="button" className="admin-link" onClick={() => setEditingRecipe(!editingRecipe)}>
+          {size.recipe_count ? 'Recipe' : '+ Recipe'}
+        </button>
+      </td>
       <td className="row-actions">
         <button type="button" className="btn-small btn-small--primary" onClick={save} disabled={!changed || saving}>
           {saving ? '...' : 'Save'}
@@ -90,6 +175,14 @@ function SizeRow({ size, canDelete, onSaved, onDeleted, onError }) {
         )}
       </td>
     </tr>
+    {editingRecipe && (
+      <tr className="row-panel">
+        <td colSpan={5}>
+          <RecipeEditor size={size} materials={materials} onSaved={onSaved} onClose={() => setEditingRecipe(false)} onError={onError} />
+        </td>
+      </tr>
+    )}
+    </>
   )
 }
 
@@ -247,7 +340,7 @@ function NewProductForm({ occasions, onCreated, onCancel, onError }) {
   )
 }
 
-function ProductCard({ product, onChange, onDeleted, onError }) {
+function ProductCard({ product, materials, onChange, onDeleted, onError }) {
   const [adding, setAdding] = useState(false)
   const [newSize, setNewSize] = useState({ name_ar: '', price: '' })
 
@@ -312,6 +405,7 @@ function ProductCard({ product, onChange, onDeleted, onError }) {
               <th>Size</th>
               <th>Price</th>
               <th>Min. days</th>
+              <th>Cost · margin</th>
               <th></th>
             </tr>
           </thead>
@@ -320,6 +414,7 @@ function ProductCard({ product, onChange, onDeleted, onError }) {
               <SizeRow
                 key={size.id}
                 size={size}
+                materials={materials}
                 canDelete={product.sizes.length > 1}
                 onSaved={replaceSize}
                 onDeleted={removeSize}
@@ -372,14 +467,13 @@ function ProductsPage({ onSessionEnded }) {
   const [search, setSearch] = useState('')
   const [occasions, setOccasions] = useState([])
   const [creating, setCreating] = useState(false)
+  const [materials, setMaterials] = useState([])
 
-  function handleError(err) {
-    if (err.status === 401) onSessionEnded()
-    else setError(err.message)
-  }
+  const handleError = useCallback(err => (err.status === 401 ? onSessionEnded() : setError(err.message)), [onSessionEnded])
 
   useEffect(() => {
     adminApi.occasions().then(setOccasions).catch(() => {})
+    adminApi.materials().then(list => setMaterials(list.filter(m => m.is_active))).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -405,7 +499,8 @@ function ProductsPage({ onSessionEnded }) {
           <h1>Products & Prices</h1>
           <p className="page-head__hint">
             Prices are in US dollars, per size. "Min. days" is the shortest time allowed between the order and
-            the event for that size. Large orders also follow the rule in Settings.
+            the event for that size. Large orders also follow the rule in Settings. "Cost" is what one piece's
+            materials cost (from its recipe), and the % is the margin on the price.
             {withoutPrice > 0 && <strong> {withoutPrice} products still have no price.</strong>}
           </p>
         </div>
@@ -455,6 +550,7 @@ function ProductsPage({ onSessionEnded }) {
                 <ProductCard
                   key={product.id}
                   product={product}
+                  materials={materials}
                   onChange={replaceProduct}
                   onDeleted={id => setProducts(products.filter(p => p.id !== id))}
                   onError={handleError}

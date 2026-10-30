@@ -68,10 +68,22 @@ PRODUCT_IMAGE_SIDE = 1400
 MAX_PRODUCT_IMAGES = 10
 
 
+def admin_size_dict(size):
+    """The public size data plus its material cost (costs stay out of the public API)."""
+    cost = size.unit_cost
+    return {
+        **size_to_dict(size),
+        "unit_cost": str(cost.quantize(Decimal("0.01"))) if cost is not None else None,
+        "recipe_count": len(size.recipe),
+    }
+
+
 def admin_product_dict(product):
     """The public product data plus what the dashboard needs to manage it."""
+    data = product_to_dict(product)
+    data["sizes"] = [admin_size_dict(size) for size in product.sizes]
     return {
-        **product_to_dict(product),
+        **data,
         "is_visible": product.is_visible,
         "photos": [{"id": image.id, "url": product_image_url(image.filename)} for image in product.images],
     }
@@ -231,7 +243,7 @@ def add_size(product_id):
     )
     product.sizes.append(size)
     db.session.commit()
-    return size_to_dict(size), 201
+    return admin_size_dict(size), 201
 
 
 @bp.patch("/sizes/<int:size_id>")
@@ -246,7 +258,7 @@ def update_size(size_id):
     if "min_lead_days" in data:
         size.min_lead_days = clean_days(data["min_lead_days"])
     db.session.commit()
-    return size_to_dict(size)
+    return admin_size_dict(size)
 
 
 @bp.delete("/sizes/<int:size_id>")

@@ -47,6 +47,19 @@ export const adminApi = {
   deletePayment: id => request(`/api/admin/orders/payments/${id}`, { method: 'DELETE' }),
   rejectPayment: (id, reason) => request(`/api/admin/orders/payments/${id}/reject`, { method: 'POST', body: { reason } }),
 
+  materials: () => request('/api/admin/inventory/materials'),
+  createMaterial: material => request('/api/admin/inventory/materials', { method: 'POST', body: material }),
+  updateMaterial: (id, changes) => request(`/api/admin/inventory/materials/${id}`, { method: 'PATCH', body: changes }),
+  adjustStock: (id, change, note) =>
+    request(`/api/admin/inventory/materials/${id}/adjust`, { method: 'POST', body: { change, note } }),
+  movements: id => request(`/api/admin/inventory/materials/${id}/movements`),
+  inventorySummary: () => request('/api/admin/inventory/summary'),
+  purchases: () => request('/api/admin/inventory/purchases'),
+  createPurchase: purchase => request('/api/admin/inventory/purchases', { method: 'POST', body: purchase }),
+  deletePurchase: id => request(`/api/admin/inventory/purchases/${id}`, { method: 'DELETE' }),
+  recipe: sizeId => request(`/api/admin/inventory/sizes/${sizeId}/recipe`),
+  saveRecipe: (sizeId, items) => request(`/api/admin/inventory/sizes/${sizeId}/recipe`, { method: 'PUT', body: { items } }),
+
   settings: () => request('/api/settings'),
   updateSettings: changes => request('/api/admin/settings', { method: 'PUT', body: changes }),
 

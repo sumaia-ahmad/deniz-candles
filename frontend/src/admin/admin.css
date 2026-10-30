@@ -805,3 +805,112 @@
 .admin .large-order-row input {
   width: 72px;
 }
+
+/* ---------- Inventory, purchases and recipes ---------- */
+.nav-badge {
+  display: inline-block;
+  min-width: 20px;
+  margin-inline-start: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--color-red);
+  color: var(--color-white);
+  font-size: 0.75rem;
+  line-height: 20px;
+  text-align: center;
+}
+
+.low-banner {
+  background: #fdeceb;
+  color: var(--color-red);
+  font-weight: 700;
+  border-radius: 14px;
+  padding: 10px 16px;
+}
+
+.row-low td {
+  background: #fff6f5;
+}
+
+.row-panel td {
+  background: var(--color-cream);
+  padding: 10px 14px;
+}
+
+.inline-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.movement-list,
+.purchase-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.movement-list li,
+.purchase-items li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-cream-dark);
+}
+
+.movement-list li:last-child,
+.purchase-items li:last-child {
+  border-bottom: none;
+}
+
+.purchase-list {
+  display: grid;
+  gap: 14px;
+}
+
+.purchase-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-bottom: 8px;
+}
+
+.purchase-head__total,
+.purchase-items li > span:last-child {
+  margin-inline-start: auto;
+}
+
+.row-cost {
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.row-cost .admin-link {
+  margin-inline-start: 8px;
+}
+
+.recipe {
+  display: grid;
+  gap: 8px;
+}
+
+.recipe p {
+  margin: 0;
+}
+
+.recipe__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.recipe__line select {
+  flex: 1 1 160px;
+}
+
+.recipe__line .money-input {
+  flex: 0 1 150px;
+}
