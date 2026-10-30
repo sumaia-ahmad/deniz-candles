@@ -52,6 +52,7 @@ def create_app(test_config=None):
     from .inventory import bp as inventory_bp
     from .orders import admin_bp as admin_orders_bp
     from .orders import public_bp as orders_bp
+    from .reports import bp as reports_bp
     from .settings import bp as settings_bp
 
     app.register_blueprint(catalog_bp)
@@ -61,6 +62,7 @@ def create_app(test_config=None):
     app.register_blueprint(admin_orders_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(inventory_bp)
+    app.register_blueprint(reports_bp)
 
     @app.errorhandler(413)
     def too_large(_error):

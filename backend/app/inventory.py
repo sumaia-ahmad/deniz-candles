@@ -63,12 +63,13 @@ def get_or_404(model, object_id):
     return obj
 
 
-def apply_movement(material, change, reason, *, note=None, purchase=None, order=None):
+def apply_movement(material, change, reason, *, note=None, purchase=None, order=None, unit_cost=None):
     """Change a material's stock and record why. The only way stock should ever change."""
     material.quantity = (material.quantity or Decimal("0")) + change
     db.session.add(
         StockMovement(material=material, change=change, reason=reason, note=note, purchase_id=getattr(purchase, "id", None),
-                      order_id=getattr(order, "id", None))
+                      order_id=getattr(order, "id", None),
+                      unit_cost=material.average_unit_cost if unit_cost is None else unit_cost)
     )
 
 
@@ -123,7 +124,14 @@ def return_order_materials(order):
     if not order.materials_consumed:
         return
     for material, qty in materials_needed(order).items():
-        apply_movement(material, qty, "order_return", order=order, note=f"Order {order.code} cancelled")
+        # Return at the cost it was taken out at, so the order's material cost nets to zero.
+        taken = db.session.scalar(
+            db.select(StockMovement.unit_cost)
+            .where(StockMovement.order_id == order.id, StockMovement.material_id == material.id,
+                   StockMovement.reason == "order")
+            .order_by(StockMovement.id.desc())
+        )
+        apply_movement(material, qty, "order_return", order=order, note=f"Order {order.code} cancelled", unit_cost=taken)
     order.materials_consumed = False
 
 
@@ -306,7 +314,7 @@ def create_purchase():
         unit_cost = clean_decimal(raw.get("unit_cost"), "Cost per unit", allow_zero=True, places=4)
         purchase.items.append(PurchaseItem(material=material, quantity=quantity, unit_cost=unit_cost))
         update_average_cost(material, quantity, unit_cost)
-        apply_movement(material, quantity, "purchase", purchase=purchase, note=purchase.supplier)
+        apply_movement(material, quantity, "purchase", purchase=purchase, note=purchase.supplier, unit_cost=unit_cost)
 
     db.session.commit()
     return purchase_to_dict(purchase), 201

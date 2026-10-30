@@ -79,6 +79,8 @@ jobs:
           curl -fsS -c jar -H 'Content-Type: application/json' \
             -d '{"username":"ci","password":"ci-password-123"}' $base/api/auth/login > /dev/null
           curl -fsS -b jar $base/api/admin/orders > /dev/null
+          curl -fsS -b jar $base/api/admin/inventory/materials > /dev/null
+          curl -fsS -b jar $base/api/admin/reports | grep -q '"months"'   # report SQL runs on PostgreSQL
           echo "Full stack works ✓"
       - name: Logs on failure
         if: failure()

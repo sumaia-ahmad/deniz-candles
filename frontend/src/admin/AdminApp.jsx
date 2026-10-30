@@ -8,6 +8,7 @@ import OrderDetailPage from './OrderDetailPage'
 import OrdersPage from './OrdersPage'
 import ProductsPage from './ProductsPage'
 import PurchasesPage from './PurchasesPage'
+import ReportsPage from './ReportsPage'
 import SettingsPage from './SettingsPage'
 import ZonesPage from './ZonesPage'
 import './admin.css'
@@ -57,6 +58,7 @@ function AdminApp() {
             </NavLink>
           )}
           {isAdmin && <NavLink to="/admin/purchases">Purchases</NavLink>}
+          {isAdmin && <NavLink to="/admin/reports">Reports</NavLink>}
           {isAdmin && <NavLink to="/admin/zones">Delivery Zones</NavLink>}
           {isAdmin && <NavLink to="/admin/settings">Settings</NavLink>}
         </nav>
@@ -76,6 +78,7 @@ function AdminApp() {
           {isAdmin && <Route path="products" element={<ProductsPage onSessionEnded={handleSessionEnded} />} />}
           {isAdmin && <Route path="inventory" element={<InventoryPage onSessionEnded={handleSessionEnded} />} />}
           {isAdmin && <Route path="purchases" element={<PurchasesPage onSessionEnded={handleSessionEnded} />} />}
+          {isAdmin && <Route path="reports" element={<ReportsPage onSessionEnded={handleSessionEnded} />} />}
           {isAdmin && <Route path="zones" element={<ZonesPage onSessionEnded={handleSessionEnded} />} />}
           {isAdmin && <Route path="settings" element={<SettingsPage onSessionEnded={handleSessionEnded} />} />}
           <Route path="*" element={<Navigate to="orders" replace />} />

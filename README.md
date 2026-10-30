@@ -39,6 +39,8 @@ customers kept asking about their orders, and there was no clear view of payment
 - Recipes per size (what one piece is made of), giving the material cost and margin of every piece
 - Starting to prepare an order takes its materials out of stock (with a warning if stock is short); cancelling
   puts them back
+- Reports built on SQL aggregates: sales, material cost, gross profit, money received and purchases month by
+  month; best sellers; sales by occasion; and money still owed by customers
 - Delivery zones, exchange rate and transfer details settings
 - Admin and assistant roles; the assistant handles orders but cannot manage the catalog, prices, payments or settings
 
@@ -49,7 +51,7 @@ flowchart LR
     Customer([Customer browser]) -->|/ /order /track| React
     Owner([Owner browser]) -->|/admin| React
     React[React SPA<br/>Vite + React Router] -->|JSON over /api| Flask
-    Flask[Flask API<br/>blueprints: catalog, orders,<br/>admin, auth, settings, inventory] --> DB[(SQLite / PostgreSQL<br/>SQLAlchemy + Alembic)]
+    Flask[Flask API<br/>blueprints: catalog, orders,<br/>admin, auth, settings,<br/>inventory, reports] --> DB[(SQLite / PostgreSQL<br/>SQLAlchemy + Alembic)]
     Flask --> Files[(Uploaded photos<br/>and receipts)]
 ```
 
@@ -70,6 +72,8 @@ flowchart LR
 - **Spam protection** on public forms with a honeypot field and a per-address rate limit.
 - **Stock as a ledger:** quantities only change through recorded movements (purchase, order, return,
   adjustment), so every number can be traced back, and an order's materials are consumed exactly once.
+  Each movement also stores the cost per unit at that moment, so an order's profit doesn't change when material
+  prices rise later.
 - **Requirements first:** the [project specification](docs/project-spec.en.md) lists numbered functional
   requirements (FR-x) and business rules (BR-x) that the code and tests refer to.
 
@@ -81,7 +85,7 @@ flowchart LR
 | Backend | Python 3.13, Flask, Flask-SQLAlchemy, Flask-Migrate (Alembic), Pillow |
 | Database | SQLite in development, PostgreSQL in Docker |
 | Deployment | Docker Compose: PostgreSQL, Flask on Gunicorn, Nginx serving the React build |
-| Quality | pytest (80 tests), GitHub Actions CI (tests, migration checks, lint, build, full Docker stack smoke test) |
+| Quality | pytest (83 tests), GitHub Actions CI (tests, migration checks, lint, build, full Docker stack smoke test) |
 
 ## Running it locally
 
@@ -130,7 +134,7 @@ cd backend && source .venv/bin/activate && python -m pytest
 ```
 
 The suite covers ordering rules (lead times, required fields, price snapshots, spam protection), the review
-workflow, payments and deposits, inventory and costing, permissions, uploads and settings. CI runs it on every push, checks that the
+workflow, payments and deposits, inventory and costing, reports, permissions, uploads and settings. CI runs it on every push, checks that the
 migrations build a fresh database matching the models, and starts the full Docker stack on PostgreSQL to test
 it end to end through Nginx.
 
@@ -138,7 +142,7 @@ it end to end through Nginx.
 
 ```
 backend/
-  app/            Flask app: catalog, orders, admin, auth, settings, inventory, images, models
+  app/            Flask app: catalog, orders, admin, auth, settings, inventory, reports, images, models
   migrations/     Alembic migrations
   tests/          pytest suite
   Dockerfile      API image (Gunicorn)
@@ -156,7 +160,7 @@ start.command     one-click local start on macOS
 - Deploy online
 - Order calendar and customer history pages
 - Quote and invoice PDFs
-- Expenses and monthly reports (sales, profit, top products)
+- Expenses (rent, packaging, ads) in the monthly reports
 - English version of the storefront
 - Generating an order from a customer's Instagram message with an LLM
 

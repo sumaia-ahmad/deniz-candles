@@ -51,6 +51,7 @@
 
 .admin-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   flex: 1;
 }
@@ -913,4 +914,48 @@
 
 .recipe__line .money-input {
   flex: 0 1 150px;
+}
+
+/* ---------- Reports ---------- */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.stat-card {
+  display: grid;
+  gap: 4px;
+}
+
+.stat-card span {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.stat-card strong {
+  font-size: 1.6rem;
+  color: var(--color-brown);
+}
+
+.stat-card strong.warn-text {
+  color: var(--color-red);
+}
+
+.report-title {
+  font-size: 1.1rem;
+  color: var(--color-brown);
+  margin: 24px 0 10px;
+}
+
+.report-table td {
+  padding: 8px 6px;
+  white-space: nowrap;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 0 18px;
 }

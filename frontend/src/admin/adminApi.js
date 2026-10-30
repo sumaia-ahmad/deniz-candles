@@ -60,6 +60,8 @@ export const adminApi = {
   recipe: sizeId => request(`/api/admin/inventory/sizes/${sizeId}/recipe`),
   saveRecipe: (sizeId, items) => request(`/api/admin/inventory/sizes/${sizeId}/recipe`, { method: 'PUT', body: { items } }),
 
+  reports: months => request(`/api/admin/reports?months=${months}`),
+
   settings: () => request('/api/settings'),
   updateSettings: changes => request('/api/admin/settings', { method: 'PUT', body: changes }),
 

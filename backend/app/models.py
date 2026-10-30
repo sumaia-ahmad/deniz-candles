@@ -305,6 +305,8 @@ class StockMovement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     material_id = db.Column(db.Integer, db.ForeignKey("materials.id"), nullable=False)
     change = db.Column(db.Numeric(12, 3), nullable=False)  # + adds stock, - removes it
+    # Cost per unit at the time of the movement, so an order's material cost never changes later.
+    unit_cost = db.Column(db.Numeric(12, 4), nullable=True)
     reason = db.Column(db.String(20), nullable=False)
     purchase_id = db.Column(db.Integer, db.ForeignKey("purchases.id"), nullable=True)
     order_id = db.Column(db.Integer, db.ForeignKey("orders.id"), nullable=True)
