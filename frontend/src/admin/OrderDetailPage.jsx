@@ -289,6 +289,8 @@ function PaymentsPanel({ order, onUpdated, onError }) {
                 <strong>{formatMoney(p.amount)}</strong> · {p.method === 'transfer' ? 'Transfer' : 'Cash'}
                 {p.is_deposit && <span className="tag tag--done">Deposit</span>}
                 {p.status === 'with_driver' && <span className="tag tag--warn">With driver</span>}
+                {p.status === 'reported' && <span className="tag tag--new">Sent by customer · to verify</span>}
+                {p.status === 'rejected' && <span className="tag tag--closed">Rejected</span>}
                 <small className="muted">
                   {' '}· {formatDate(p.created_at, 'en-GB')}
                   {p.transfer_number && ` · #${p.transfer_number}`}
@@ -302,6 +304,30 @@ function PaymentsPanel({ order, onUpdated, onError }) {
                   <button type="button" className="btn-small btn-small--primary" disabled={busy} onClick={() => run(() => adminApi.markPaymentReceived(p.id))}>
                     Received
                   </button>
+                )}
+                {p.status === 'reported' && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn-small btn-small--primary"
+                      disabled={busy}
+                      title="The money is in your account"
+                      onClick={() => run(() => adminApi.markPaymentReceived(p.id))}
+                    >
+                      ✓ Confirm
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-small btn-small--danger-outline"
+                      disabled={busy}
+                      onClick={() => {
+                        const reason = window.prompt('Why are you rejecting it? (the customer will see this)')
+                        if (reason && reason.trim()) run(() => adminApi.rejectPayment(p.id, reason.trim()))
+                      }}
+                    >
+                      ✗ Reject
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"

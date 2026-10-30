@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { fetchOrder, respondToChanges } from '../api'
+import { fetchOrder, reportPayment, respondToChanges } from '../api'
+import { cleanAmount } from '../numberInput'
 import PageHeader from '../components/PageHeader'
 import Price from '../components/Price'
 import { useSiteSettings } from '../currency'
@@ -47,6 +48,86 @@ function TransferDetails({ details }) {
       <span>معلومات التحويل</span>
       <p>{details}</p>
     </div>
+  )
+}
+
+function ReportPayment({ order, suggestedAmount, onReported }) {
+  const [open, setOpen] = useState(false)
+  const [amount, setAmount] = useState(suggestedAmount ? String(Number(suggestedAmount)) : '')
+  const [reference, setReference] = useState('')
+  const [receipt, setReceipt] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  if (!order.can_report_payment) return null
+  if (!open) {
+    return (
+      <button type="button" className="btn btn--primary report-button" onClick={() => setOpen(true)}>
+        حوّلتِ؟ ارفعي صورة الإشعار
+      </button>
+    )
+  }
+
+  async function submit(event) {
+    event.preventDefault()
+    const data = new FormData()
+    data.append('amount', amount)
+    data.append('transfer_number', reference)
+    data.append('receipt', receipt)
+    setBusy(true)
+    setError('')
+    try {
+      onReported(await reportPayment(order.code, data))
+      setOpen(false)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form className="report-form" onSubmit={submit}>
+      <label className="form-field">
+        <span>المبلغ اللي حوّلتيه ($) *</span>
+        <input type="text" inputMode="decimal" dir="ltr" value={amount} onChange={e => setAmount(cleanAmount(e.target.value))} required />
+      </label>
+      <label className="form-field">
+        <span>رقم العملية (اختياري)</span>
+        <input dir="ltr" value={reference} onChange={e => setReference(e.target.value)} maxLength={60} />
+      </label>
+      <label className="form-field">
+        <span>صورة الإشعار *</span>
+        <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setReceipt(e.target.files[0] || null)} required />
+      </label>
+      {error && <p className="order-error">{error}</p>}
+      <div className="proposal__actions">
+        <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'عم نرسل...' : 'إرسال الإشعار'}</button>
+        <button type="button" className="btn btn--ghost" onClick={() => setOpen(false)}>إلغاء</button>
+      </div>
+    </form>
+  )
+}
+
+const REPORT_STATUS = {
+  reported: { text: 'وصلنا الإشعار، وعم نتأكد منه ⏳', tone: 'wait' },
+  received: { text: 'تأكدنا من الدفعة ✓', tone: 'ok' },
+  rejected: { text: 'ما قدرنا نأكد هالدفعة', tone: 'bad' },
+}
+
+function PaymentReports({ reports }) {
+  if (!reports.length) return null
+  return (
+    <ul className="report-list">
+      {reports.map((report, index) => (
+        <li key={index} className={`report-list__item report-list__item--${REPORT_STATUS[report.status]?.tone}`}>
+          <span>
+            إشعار بقيمة <strong dir="ltr">{formatMoney(report.amount)}</strong>: {REPORT_STATUS[report.status]?.text}
+          </span>
+          {report.reason && <small>السبب: {report.reason}</small>}
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -98,6 +179,11 @@ function OrderView({ order, onChange }) {
             {order.deposit_required && <> بقيمة <strong dir="ltr">{formatMoney(order.deposit_required)}</strong></>}.
           </p>
           <TransferDetails details={transferDetails} />
+          <ReportPayment
+            order={order}
+            suggestedAmount={Math.max(0, Number(order.deposit_required) - Number(order.paid))}
+            onReported={onChange}
+          />
         </div>
       )}
       {order.status === 'awaiting_deposit' && depositPaid && (
@@ -110,8 +196,10 @@ function OrderView({ order, onChange }) {
             {' '}(<strong dir="ltr">{formatMoney(order.remaining)}</strong>).
           </p>
           <TransferDetails details={transferDetails} />
+          <ReportPayment order={order} suggestedAmount={order.remaining} onReported={onChange} />
         </div>
       )}
+      <PaymentReports reports={order.payment_reports} />
       {order.status === 'rejected' && order.admin_message && (
         <p className="track-note track-note--sad">للأسف ما قدرنا ناخد هالطلب: {order.admin_message}</p>
       )}

@@ -5,6 +5,7 @@ import { adminApi } from './adminApi'
 
 const FILTERS = [
   { value: 'pending_review', label: 'To review' },
+  { value: 'payments_to_verify', label: 'Payments to verify' },
   { value: 'open', label: 'All open' },
   { value: '', label: 'All' },
 ]
@@ -82,7 +83,10 @@ function OrdersPage({ onSessionEnded }) {
                   </td>
                   <td>{order.piece_count}</td>
                   <td>{formatMoney(order.total) ?? '—'}</td>
-                  <td><span className={`tag tag--${STATUS[order.status].tone}`}>{STATUS[order.status].en}</span></td>
+                  <td>
+                    <span className={`tag tag--${STATUS[order.status].tone}`}>{STATUS[order.status].en}</span>
+                    {order.payments_to_verify > 0 && <span className="tag tag--new tag--gap">💳 {order.payments_to_verify} to verify</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -18,6 +18,8 @@ admin_bp = Blueprint("admin_orders", __name__, url_prefix="/api/admin/orders")
 
 CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"  # no 0/O or 1/I/L, easy to read aloud
 MAX_ITEMS = 20
+MAX_OPEN_REPORTS = 3  # unchecked receipts a customer can have on one order at a time
+PAYABLE_STATUSES = ("approved", "awaiting_deposit", "confirmed", "in_progress", "ready")
 MAX_IMAGE_SIDE = 1600
 
 # Simple spam protection (FR-09): at most 5 orders per 10 minutes from one address.
@@ -136,6 +138,17 @@ def order_to_public_dict(order):
         "deposit_required": money(order.deposit_required),
         "paid": money(order.paid),
         "remaining": money(order.remaining),
+        "can_report_payment": order.status in PAYABLE_STATUSES,
+        "payment_reports": [
+            {
+                "amount": money(p.amount),
+                "status": p.status,
+                "reason": p.note if p.status == "rejected" else None,
+                "created_at": p.created_at.isoformat(),
+            }
+            for p in order.payments
+            if p.reported_by_customer
+        ],
         "created_at": order.created_at.isoformat(),
     }
 
@@ -155,6 +168,7 @@ def order_summary(order):
         "days_left": days_until(order.event_date),
         "piece_count": order.piece_count,
         "total": money(order.total),
+        "payments_to_verify": sum(1 for p in order.payments if p.status == "reported"),
         "created_at": order.created_at.isoformat(),
     }
 
@@ -207,6 +221,7 @@ def payment_to_dict(payment):
         "transfer_number": payment.transfer_number,
         "note": payment.note,
         "receipt_url": f"/api/admin/orders/payments/{payment.id}/receipt" if payment.receipt_image else None,
+        "reported_by_customer": payment.reported_by_customer,
         "created_at": payment.created_at.isoformat(),
     }
 
@@ -339,6 +354,50 @@ def track_order(code):
     return order_to_public_dict(order)
 
 
+@public_bp.post("/<code>/payments")
+def report_payment(code):
+    """The customer uploads the receipt of her transfer. It counts only after the admin confirms it."""
+    order = db.session.scalar(db.select(Order).where(Order.code == code.upper()))
+    if order is None:
+        abort(404)
+    if order.status not in PAYABLE_STATUSES:
+        raise OrderError("ما فيكِ ترسلي دفعة على هالطلب حالياً")
+    if request.form.get("website"):  # honeypot, as on the order form
+        raise OrderError("تعذّر إرسال الإشعار")
+    if sum(1 for p in order.payments if p.status == "reported") >= MAX_OPEN_REPORTS:
+        raise OrderError("عنا إشعارات لسا ما تأكدنا منها. استني شوي لنراجعها 🙏")
+    check_rate_limit()
+
+    try:
+        amount = Decimal((request.form.get("amount") or "").strip())
+    except Exception:
+        raise OrderError("اكتبي المبلغ اللي حوّلتيه") from None
+    if amount <= 0 or amount.as_tuple().exponent < -2:
+        raise OrderError("المبلغ غير صحيح")
+
+    receipt = request.files.get("receipt")
+    if receipt is None or not receipt.filename:
+        raise OrderError("صورة الإشعار مطلوبة")
+    try:
+        receipt_name = save_image(receipt, uploads_dir("receipts"), MAX_IMAGE_SIDE)
+    except NotAnImage:
+        raise OrderError("الملف لازم يكون صورة (JPG أو PNG)") from None
+
+    order.payments.append(
+        Payment(
+            method="transfer",
+            amount=amount,
+            status="reported",
+            reported_by_customer=True,
+            is_deposit=order.status == "awaiting_deposit",
+            transfer_number=(request.form.get("transfer_number") or "").strip()[:60] or None,
+            receipt_image=receipt_name,
+        )
+    )
+    db.session.commit()
+    return order_to_public_dict(order), 201
+
+
 @public_bp.post("/<code>/respond")
 def respond_to_changes(code):
     """The customer accepts or declines the changes the admin proposed (FR-16b)."""
@@ -370,6 +429,8 @@ def list_orders():
     status = request.args.get("status")
     if status == "open":
         query = query.where(Order.status.not_in(Order.CLOSED))
+    elif status == "payments_to_verify":
+        query = query.where(Order.payments.any(Payment.status == "reported"))
     elif status:
         query = query.where(Order.status == status)
     return [order_summary(o) for o in db.session.scalars(query)]
@@ -516,11 +577,29 @@ def get_payment_or_404(payment_id):
 @admin_bp.post("/payments/<int:payment_id>/received")
 @admin_required
 def mark_received(payment_id):
-    """The driver handed over the cash."""
+    """The driver handed over the cash, or the admin checked a customer's receipt and the money is there."""
     payment = get_payment_or_404(payment_id)
+    if payment.status not in ("with_driver", "reported"):
+        raise OrderError("This payment is already recorded.")
     payment.status = "received"
     payment.received_at = utcnow()
     confirm_if_deposit_received(payment.order)
+    db.session.commit()
+    return order_detail(payment.order)
+
+
+@admin_bp.post("/payments/<int:payment_id>/reject")
+@admin_required
+def reject_report(payment_id):
+    """The receipt doesn't match money that arrived. The reason is shown to the customer."""
+    payment = get_payment_or_404(payment_id)
+    if payment.status != "reported":
+        raise OrderError("Only payments waiting for verification can be rejected.")
+    reason = ((request.get_json(silent=True) or {}).get("reason") or "").strip()
+    if not reason:
+        raise OrderError("Please write the reason (the customer will see it).")
+    payment.status = "rejected"
+    payment.note = reason[:300]
     db.session.commit()
     return order_detail(payment.order)
 

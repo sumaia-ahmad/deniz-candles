@@ -45,6 +45,7 @@ export const adminApi = {
   addPayment: (orderId, formData) => request(`/api/admin/orders/${orderId}/payments`, { method: 'POST', body: formData }),
   markPaymentReceived: id => request(`/api/admin/orders/payments/${id}/received`, { method: 'POST' }),
   deletePayment: id => request(`/api/admin/orders/payments/${id}`, { method: 'DELETE' }),
+  rejectPayment: (id, reason) => request(`/api/admin/orders/payments/${id}/reject`, { method: 'POST', body: { reason } }),
 
   settings: () => request('/api/settings'),
   updateSettings: changes => request('/api/admin/settings', { method: 'PUT', body: changes }),

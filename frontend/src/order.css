@@ -439,3 +439,44 @@
 .date-hint strong {
   color: var(--color-rose);
 }
+
+.report-button {
+  margin-top: 12px;
+}
+
+.report-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  background: var(--color-white);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.report-form input {
+  font: inherit;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--color-cream-dark);
+  border-radius: 12px;
+}
+
+.report-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 8px;
+}
+
+.report-list__item {
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.report-list__item--wait { background: #fff3d6; }
+.report-list__item--ok { background: #e3f4e8; }
+.report-list__item--bad { background: #fdecec; }

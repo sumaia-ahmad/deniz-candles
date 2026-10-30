@@ -50,3 +50,8 @@ export async function respondToChanges(code, accept) {
     }),
   )
 }
+
+// The customer uploads her transfer receipt (counted only after the admin confirms it).
+export async function reportPayment(code, formData) {
+  return readJson(await fetch(`/api/orders/${encodeURIComponent(code)}/payments`, { method: 'POST', body: formData }))
+}

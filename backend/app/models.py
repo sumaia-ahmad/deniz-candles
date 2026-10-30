@@ -226,13 +226,18 @@ class Payment(db.Model):
     __tablename__ = "payments"
 
     METHODS = ("transfer", "cash")
-    STATUSES = ("received", "with_driver")
+    # received     = money that reached Deniz (counts as paid)
+    # with_driver  = cash on delivery the driver still holds
+    # reported     = the customer uploaded a receipt; waiting for the admin to check it (not counted yet)
+    # rejected     = a customer report the admin could not match to real money
+    STATUSES = ("received", "with_driver", "reported", "rejected")
 
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey("orders.id"), nullable=False)
     method = db.Column(db.String(20), nullable=False)  # "transfer" or "cash"
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     is_deposit = db.Column(db.Boolean, nullable=False, default=False)
+    reported_by_customer = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     # "with_driver" = cash on delivery not yet handed over; becomes "received" once it is.
     status = db.Column(db.String(20), nullable=False, default="received")
     transfer_number = db.Column(db.String(60), nullable=True)
