@@ -5,7 +5,7 @@ import PageHeader from '../components/PageHeader'
 import Price from '../components/Price'
 import { priceText, useSypRate } from '../currency'
 import { cleanWholeNumber } from '../numberInput'
-import { formatMoney } from '../orderStatus'
+import { formatDate, formatMoney } from '../orderStatus'
 import '../order.css'
 
 const GOVERNORATES = [
@@ -262,11 +262,12 @@ function OrderPage() {
                 <label className="form-field">
                   <span>تاريخ المناسبة *</span>
                   <input type="date" min={minDate} value={form.event_date} onChange={e => update('event_date', e.target.value)} required />
-                  <small>
-                    {leadDays >= 14
-                      ? 'التوزيعات بتحتاج 14 يوم على الأقل للتحضير'
-                      : `هالطلب بيحتاج ${leadDays} أيام على الأقل للتحضير`}
-                  </small>
+                  {leadDays > 0 && (
+                    <small className="date-hint">
+                      أقرب تاريخ متاح: <strong>{formatDate(minDate)}</strong>، لأنو هالطلب بيحتاج {leadDays} يوم على الأقل
+                      للتحضير.
+                    </small>
+                  )}
                 </label>
               </div>
             </section>

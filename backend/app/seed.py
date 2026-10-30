@@ -29,8 +29,6 @@ PRODUCTS = [
     ("gift", None, "بوكس ورد اسطواني حجم كبير", ["gifts-12", "gifts-14"]),
     ("gift", None, "بوكيه شمعة الديزي", ["gifts-06"]),
 ]
-
-
 @click.command("seed")
 def seed_command():
     """Reset the catalog (occasions, products, sizes, images) to the starting data.

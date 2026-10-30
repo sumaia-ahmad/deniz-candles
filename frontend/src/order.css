@@ -435,3 +435,7 @@
   margin: 6px 0 0 !important;
   color: var(--color-text-muted);
 }
+
+.date-hint strong {
+  color: var(--color-rose);
+}
