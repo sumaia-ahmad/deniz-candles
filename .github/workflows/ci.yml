@@ -50,3 +50,39 @@ jobs:
         run: npm run lint
       - name: Build
         run: npm run build
+
+  docker:
+    name: Docker (full stack on PostgreSQL)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create secrets for this run
+        run: |
+          echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)" > .env
+          echo "SECRET_KEY=$(openssl rand -hex 32)" >> .env
+      - name: Build and start
+        run: docker compose up -d --build --wait --wait-timeout 180
+      - name: Migrations match the models on PostgreSQL
+        run: docker compose exec -T backend flask --app app db check
+      - name: Load the catalog and create an account
+        run: |
+          docker compose exec -T backend flask --app app seed
+          docker compose exec -T backend flask --app app create-user ci --password ci-password-123
+      - name: Smoke test through Nginx
+        run: |
+          set -e
+          base=http://localhost:8080
+          curl -fsS $base/ | grep -q '<div id="root">'
+          curl -fsS $base/order | grep -q '<div id="root">'          # single-page app routes
+          test "$(curl -fsS $base/api/products | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))')" = 17
+          curl -fsS -o /dev/null $base/api/media/products/gifts-11.jpg
+          curl -fsS -c jar -H 'Content-Type: application/json' \
+            -d '{"username":"ci","password":"ci-password-123"}' $base/api/auth/login > /dev/null
+          curl -fsS -b jar $base/api/admin/orders > /dev/null
+          echo "Full stack works ✓"
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs
+      - name: Stop
+        if: always()
+        run: docker compose down -v

@@ -71,8 +71,9 @@ flowchart LR
 |---|---|
 | Frontend | React 19, React Router, Vite, plain CSS (RTL-first), oxlint |
 | Backend | Python 3.13, Flask, Flask-SQLAlchemy, Flask-Migrate (Alembic), Pillow |
-| Database | SQLite in development; PostgreSQL-ready through SQLAlchemy |
-| Quality | pytest (68 tests), GitHub Actions CI (tests, migration check, lint, build) |
+| Database | SQLite in development, PostgreSQL in Docker |
+| Deployment | Docker Compose: PostgreSQL, Flask on Gunicorn, Nginx serving the React build |
+| Quality | pytest (71 tests), GitHub Actions CI (tests, migration checks, lint, build, full Docker stack smoke test) |
 
 ## Running it locally
 
@@ -99,6 +100,21 @@ npm run dev                       # http://localhost:5173  ·  dashboard at /adm
 On macOS, `start.command` at the project root does all of this in one double-click: it applies pending
 migrations, asks for an account on first run, starts both servers and opens the dashboard.
 
+### Running with Docker
+
+The whole system runs as three containers: PostgreSQL, the Flask API on Gunicorn, and Nginx, which serves the
+built website and forwards `/api` to the backend.
+
+```bash
+cp .env.example .env              # then set POSTGRES_PASSWORD and a long random SECRET_KEY
+docker compose up -d --build      # migrations run automatically when the backend starts
+docker compose exec backend flask --app app seed
+docker compose exec backend flask --app app create-user deniz
+```
+
+Open http://localhost:8080 (dashboard at `/admin`). Database data and uploaded photos live in Docker volumes,
+so they survive restarts and rebuilds.
+
 ### Tests
 
 ```bash
@@ -106,8 +122,9 @@ cd backend && source .venv/bin/activate && python -m pytest
 ```
 
 The suite covers ordering rules (lead times, required fields, price snapshots, spam protection), the review
-workflow, payments and deposits, permissions, uploads and settings. CI runs it on every push, along with a check
-that the migrations build a fresh database matching the models.
+workflow, payments and deposits, permissions, uploads and settings. CI runs it on every push, checks that the
+migrations build a fresh database matching the models, and starts the full Docker stack on PostgreSQL to test
+it end to end through Nginx.
 
 ## Project structure
 
@@ -116,10 +133,13 @@ backend/
   app/            Flask app: catalog, orders, admin, auth, settings, images, models
   migrations/     Alembic migrations
   tests/          pytest suite
+  Dockerfile      API image (Gunicorn)
 frontend/
   src/            storefront (App, pages/, components/) and dashboard (admin/)
+  Dockerfile      website image (Nginx), with nginx.conf
 docs/
   project-spec.en.md   requirements and business rules (Arabic version alongside)
+compose.yaml      the full stack: PostgreSQL + API + website
 start.command     one-click local start on macOS
 ```
 

@@ -4,6 +4,7 @@ from datetime import timedelta
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .extensions import db, migrate
 
@@ -15,6 +16,8 @@ def create_app(test_config=None):
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///deniz.db")
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    # In production (HTTPS) the login cookie must only travel over encrypted connections.
+    app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE") == "1"
     # "Remember me" keeps the dashboard signed in for 30 days.
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
     # Largest upload accepted (the reference image on the order form).
@@ -22,6 +25,10 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
     app.json.ensure_ascii = False
+
+    # Behind a reverse proxy (Nginx), trust its X-Forwarded-* headers for the client address and scheme.
+    if os.environ.get("BEHIND_PROXY") == "1":
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     CORS(app)
     db.init_app(app)
