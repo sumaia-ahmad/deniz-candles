@@ -405,7 +405,7 @@ function ProductCard({ product, materials, onChange, onDeleted, onError }) {
               <th>Size</th>
               <th>Price</th>
               <th>Min. days</th>
-              <th>Cost · margin</th>
+              <th title="Material cost of one piece · margin on the price">Cost</th>
               <th></th>
             </tr>
           </thead>
